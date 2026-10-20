@@ -81,6 +81,7 @@ async function refreshHealth() {
     const up = h.uptime_hours;
     $("#uptime").textContent = up >= 24 ? `${Math.floor(up / 24)} d ${Math.round(up % 24)} h` : `${up} h`;
     if (h.devices) renderDevices(h.devices);
+    for (const n of h.notices || []) toast(`📱 ${n.msg}`);
   } catch { /* server busy; try next tick */ }
 }
 

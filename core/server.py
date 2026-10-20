@@ -18,7 +18,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from . import dialogs, events, jobs, outputs, registry, system_health
+from . import dialogs, events, heartbeat, inbox, jobs, outputs, registry, system_health
 from .config import UI_DIR, load_config, load_sections
 
 TOKEN = secrets.token_urlsafe(24)
@@ -29,6 +29,7 @@ _show_window = None  # set by mydesk.py: brings the main window to the front
 def set_show_window(fn) -> None:
     global _show_window
     _show_window = fn
+    inbox.set_show_window(fn)
 
 
 def _run_tool_page(tool: dict, args: list[str], timeout: int = 30) -> str:
@@ -151,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/state":
                 return self._json(_state())
             if path == "/api/health":
-                return self._json(system_health.health())
+                return self._json({**system_health.health(), "notices": inbox.take_notices()})
             if path == "/api/os":
                 return self._json(system_health.os_details())
             if path == "/api/ports":
@@ -252,6 +253,8 @@ class Handler(BaseHTTPRequestHandler):
 def start_server() -> str:
     """Start on a free port in a background thread; returns the app URL."""
     system_health.start_sampler()
+    heartbeat.start()   # data/status/status.json every 30 s ("is my computer on?")
+    inbox.start()       # data/inbox -> data/outbox mailbox for phone-via-Claude requests
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     httpd.daemon_threads = True
     threading.Thread(target=httpd.serve_forever, name="mydesk-http", daemon=True).start()

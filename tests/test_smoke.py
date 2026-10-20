@@ -75,6 +75,25 @@ class SmokeTest(unittest.TestCase):
             self.get("/page/mycheats/..%2F..%2Fconfig")
         self.assertEqual(ctx.exception.code, 404)
 
+    def test_mailbox_and_heartbeat(self):
+        sys.path.insert(0, str(ROOT / "remote"))
+        import ask_mydesk
+        import pc_status
+        from core import heartbeat
+        r = ask_mydesk.ask(ROOT, {"action": "ping"}, timeout=15)
+        self.assertTrue(r["ok"], r)
+        r = ask_mydesk.ask(ROOT, {"action": "rm -rf /"}, timeout=15)
+        self.assertFalse(r["ok"])
+        self.assertIn("not allowed", r["error"])
+        r = ask_mydesk.ask(ROOT, {"action": "run_tool", "tool": "nope"}, timeout=15)
+        self.assertFalse(r["ok"])
+        heartbeat.write_status()
+        status = json.loads(heartbeat.STATUS_FILE.read_text())
+        self.assertEqual(pc_status.verdict(status)[0], 0)
+        self.assertEqual(pc_status.verdict(status, now=status["last_seen_epoch"] + 600)[0], 1)
+        self.assertEqual(pc_status.verdict(status, now=status["last_seen_epoch"] + 7200)[0], 2)
+        self.assertEqual(pc_status.verdict(None)[0], 2)
+
     def test_requires_token(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.get("/api/state", token=False)

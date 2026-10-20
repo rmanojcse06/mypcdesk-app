@@ -8,5 +8,6 @@
     "width": 1320,
     "height": 860
   },
-  "claude_model": "claude-sonnet-5-5"
+  "claude_model": "claude-sonnet-5-5",
+  "heartbeat_url": ""
 }

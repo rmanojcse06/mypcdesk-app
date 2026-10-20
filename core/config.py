@@ -19,6 +19,7 @@ DEFAULT_CONFIG = {
     "close_button": "minimize",   # "minimize" keeps it on the taskbar, "tray" hides it to the tray icon
     "tray_quit": False,           # True adds "Quit MyDesk" to the tray menu; otherwise end it in Task Manager
     "window": {"width": 1320, "height": 860},
+    "heartbeat_url": "",          # optional healthchecks.io-style check-in URL; alerts your phone when the PC stops
     "claude_model": "claude-sonnet-5-5",
 }
 
