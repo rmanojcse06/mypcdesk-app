@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyDesk Lobby Design</title>
+<!-- Design mockup of the three-panel lobby. Open with #lobby, #health, #claude, #tokens or #max. Sample data only. -->
+<style>
+:root {
+  --paper: #fbf6ec; --card: #fff; --ink: #1d2233; --ink-2: #565d73; --ink-3: #8a90a3; --line: #e7e1d4;
+  --blue: #2f6fed; --green: #0e9f6e; --pink: #e3487a; --violet: #7b4fe0; --amber: #e8890c; --red: #e5484d;
+  --cyan: #0aa5b8; --slate: #4b5876; --clay: #d97757;
+  --serif: Cambria, Georgia, "DejaVu Serif", serif; --sans: "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; height: 100vh; overflow: hidden; color: var(--ink); font: 14px/1.45 var(--sans);
+  background: var(--paper) radial-gradient(rgba(29,34,51,.07) 1px, transparent 1px) 0 0 / 18px 18px;
+}
+.app { height: 100vh; display: grid; grid-template-rows: auto 1fr; gap: 14px; padding: 16px 22px 18px; }
+
+/* header */
+.top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding-bottom: 10px; border-bottom: 2.5px solid var(--ink); }
+.hello { font: 600 22px/1.15 var(--serif); }
+.hello span { display: block; font-weight: 400; font-size: 16px; color: var(--ink-2); }
+.hello b { text-decoration: underline 3px var(--pink); text-underline-offset: 4px; }
+.brand { margin: 0; font: 700 34px/1 var(--serif); }
+.who { justify-self: end; display: flex; gap: 14px; align-items: center; text-align: right; }
+.who .t { font: 600 18px var(--sans); } .who .d { font-size: 12.5px; color: var(--ink-2); }
+.avatar { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; color: #fff; font: 700 20px var(--serif);
+  border: 2.5px solid var(--ink); box-shadow: 3px 3px 0 var(--ink);
+  background: conic-gradient(var(--blue), var(--violet), var(--pink), var(--amber), var(--green), var(--blue)); }
+
+/* panels */
+.panels { min-height: 0; display: grid; gap: 14px; transition: grid-template-rows .3s; }
+.panel { position: relative; min-height: 0; display: flex; flex-direction: column; background: var(--card);
+  border: 2px solid var(--ink); border-radius: 16px; box-shadow: 3px 3px 0 var(--ink); overflow: hidden; }
+.ph { display: flex; align-items: center; gap: 10px; padding: 9px 12px 9px 16px; border-bottom: 2px solid var(--ink);
+  background: color-mix(in srgb, var(--pc) 10%, #fff); }
+.ph .badge { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--pc); color: #fff;
+  border: 1.75px solid var(--ink); font: 700 13px var(--serif); }
+.ph h2 { margin: 0; font: 700 17px var(--serif); }
+.ph .meta { color: var(--ink-3); font-size: 12px; }
+.ph .acts { margin-left: auto; display: flex; gap: 6px; }
+.ib { width: 30px; height: 30px; display: grid; place-items: center; border: 1.75px solid var(--ink); border-radius: 8px; background: #fff;
+  box-shadow: 1.5px 1.5px 0 var(--ink); cursor: pointer; }
+.ib svg { width: 15px; height: 15px; stroke: var(--ink); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ib.hint { outline: 3px solid color-mix(in srgb, var(--pc) 45%, transparent); outline-offset: 2px; }
+.pb { flex: 1; min-height: 0; padding: 14px 18px; overflow: hidden; }
+.panel.collapsed .pb { padding: 0 16px; display: flex; align-items: center; gap: 10px; overflow: hidden; }
+.panel.collapsed .ph { border-bottom: none; }
+.panel.collapsed { flex-direction: row; }
+.panel.collapsed .ph { flex: none; background: none; padding-right: 8px; }
+.panel.collapsed .acts { order: 9; margin-left: 0; padding-right: 10px; align-self: center; }
+.panel.hidden { display: none; }
+
+/* health */
+.gauges { display: grid; grid-template-columns: repeat(3, 1fr) 1.3fr; gap: 16px; align-items: center; }
+.g { display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 12px; border: 2px solid transparent; cursor: pointer; }
+.g.sel { border-color: var(--ink); background: color-mix(in srgb, var(--gc) 10%, #fff); box-shadow: 2px 2px 0 var(--ink); }
+.g svg { width: 58px; height: 58px; transform: rotate(-90deg); flex: none; }
+.g circle { fill: none; stroke-width: 6; }
+.g b { display: block; font: 700 23px/1 var(--sans); } .g span { font: 600 14px var(--serif); } .g small { display: block; font-size: 11.5px; color: var(--ink-3); }
+.facts { display: grid; gap: 3px; padding-left: 16px; border-left: 2px dashed var(--line); font-size: 13px; }
+.facts div { display: flex; gap: 8px; } .facts span { color: var(--ink-2); min-width: 84px; }
+.inds { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin-top: 12px; padding-top: 11px; border-top: 2px dashed var(--line); }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1.75px solid var(--ink); border-radius: 999px;
+  background: #fff; font: 600 12px var(--sans); white-space: nowrap; cursor: pointer; }
+.chip small { color: var(--ink-3); font-weight: 500; }
+.chip .bar { width: 42px; height: 7px; border: 1.25px solid var(--ink); border-radius: 9px; background: #f1ece1; overflow: hidden; }
+.chip .bar i { display: block; height: 100%; background: var(--amber); }
+.chip.usb { background: color-mix(in srgb, var(--cyan) 14%, #fff); border-color: var(--cyan); }
+.chip.usb .bar i { background: var(--cyan); }
+.chip.green { background: color-mix(in srgb, var(--green) 14%, #fff); border-color: var(--green); }
+.tagx { font: 800 9.5px var(--sans); color: #fff; background: var(--cyan); border-radius: 4px; padding: 1px 4px; }
+.key { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border: 1.75px solid var(--ink); border-radius: 7px;
+  box-shadow: 0 2px 0 var(--ink); background: #fff; font: 700 11.5px var(--sans); color: var(--ink-3); }
+.key::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: #d9d3c5; }
+.key.lit { color: var(--ink); background: #fffbe6; } .key.lit::before { background: #3ddc84; box-shadow: 0 0 6px #3ddc84; }
+.keys { margin-left: auto; display: flex; gap: 7px; }
+
+/* tools */
+.toolgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; height: 100%; }
+.sec { border: 2px solid var(--ink); border-radius: 12px; padding: 10px 12px; background: color-mix(in srgb, var(--sc) 7%, #fff); }
+.sec h3 { margin: 0 0 7px; display: flex; align-items: center; gap: 8px; font: 700 14.5px var(--serif); }
+.sec h3 i { width: 11px; height: 11px; border-radius: 4px; background: var(--sc); border: 1.5px solid var(--ink); }
+.sec h3 small { margin-left: auto; font: 600 11px var(--sans); color: var(--ink-3); }
+.sec a { display: block; padding: 2px 0; color: var(--blue); text-decoration: underline; text-underline-offset: 3px; font: 500 13.5px var(--serif); }
+.sec a.soon { color: var(--ink-3); text-decoration: none; font-style: italic; }
+.sec a.soon::after { content: " · soon"; font: 500 10.5px var(--sans); }
+.star { color: var(--amber); text-decoration: none !important; }
+
+/* collapsed strips */
+.strip-label { font: 700 11px var(--sans); color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+.note { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 999px; border: 1.75px solid var(--ink);
+  background: #fff; font: 500 12.5px var(--sans); white-space: nowrap; }
+.note .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nc, var(--red)); }
+.note time { color: var(--ink-3); font-size: 11.5px; }
+.fav { display: inline-flex; align-items: center; gap: 7px; padding: 4px 11px; border-radius: 9px; border: 1.75px solid var(--ink);
+  background: color-mix(in srgb, var(--sc) 14%, #fff); box-shadow: 1.5px 1.5px 0 var(--ink); font: 700 12.5px var(--serif); white-space: nowrap; }
+.fav i { width: 9px; height: 9px; border-radius: 3px; background: var(--sc); border: 1.25px solid var(--ink); }
+.vr { width: 2px; align-self: stretch; margin: 10px 4px; background: var(--line); }
+.mini { display: inline-flex; gap: 5px; align-items: baseline; font: 600 12.5px var(--sans); white-space: nowrap; }
+.mini b { font-size: 15px; }
+.mini-ring { width: 18px; height: 18px; border-radius: 50%; background: conic-gradient(var(--c) calc(var(--p) * 1%), #e7e1d4 0); align-self: center; }
+
+/* claude */
+.prompt { display: flex; gap: 12px; align-items: center; }
+.prompt .in { flex: 1; padding: 11px 14px; border: 2.5px solid var(--ink); border-radius: 11px; background: #fffdf8; font: 400 16px var(--serif); color: var(--ink-3); }
+.btn { padding: 10px 18px; border: 2px solid var(--ink); border-radius: 10px; background: var(--clay); color: #fff; font-weight: 700; box-shadow: 2px 2px 0 var(--ink); white-space: nowrap; }
+.btn.ghost { background: #fff; color: var(--ink); }
+.usage { display: grid; grid-template-columns: repeat(4, 1fr) 1.25fr; gap: 10px; margin-bottom: 12px; }
+.stat { position: relative; padding: 9px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #fff; cursor: pointer; }
+.stat.sel { background: color-mix(in srgb, var(--clay) 12%, #fff); box-shadow: 2px 2px 0 var(--ink); }
+.stat .k { font: 700 10.5px var(--sans); color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; }
+.stat .v { font: 700 21px/1.15 var(--sans); font-variant-numeric: tabular-nums; }
+.stat .c { font: 600 12.5px var(--sans); color: var(--green); }
+.stat .c small { color: var(--ink-3); font-weight: 500; }
+.stat .info { position: absolute; top: 8px; right: 9px; width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid var(--ink-3);
+  font: 700 10px/13px var(--sans); text-align: center; color: var(--ink-3); }
+.bill { padding: 9px 12px; border: 2px solid var(--ink); border-radius: 12px; background: color-mix(in srgb, var(--clay) 9%, #fff); }
+.bill .row { display: flex; justify-content: space-between; align-items: baseline; }
+.bill .v { font: 700 21px/1.15 var(--sans); }
+.meter { height: 10px; border: 1.5px solid var(--ink); border-radius: 9px; background: #f1ece1; overflow: hidden; margin: 6px 0 4px; }
+.meter i { display: block; height: 100%; background: var(--clay); }
+.bill small { color: var(--ink-3); font-size: 11.5px; }
+.stat-k { font: 700 10.5px var(--sans); color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px; }
+
+.cl-grid { display: grid; grid-template-columns: 1fr 470px; gap: 16px; height: 100%; min-height: 0; }
+.chat { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.msgs { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.m { max-width: 82%; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 14px; font-size: 13.5px; }
+.m.u { align-self: flex-end; background: #eef3ff; border-bottom-right-radius: 4px; }
+.m.a { align-self: flex-start; background: #fff; border-bottom-left-radius: 4px; }
+.m .tk { display: block; margin-top: 5px; font: 600 11px var(--sans); color: var(--ink-3); }
+.m ul { margin: 6px 0 0; padding-left: 18px; }
+.side { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.card { border: 2px solid var(--ink); border-radius: 12px; padding: 11px 14px; background: #fff; }
+.card h4 { margin: 0 0 8px; font: 700 14px var(--serif); display: flex; align-items: center; }
+.card h4 small { margin-left: auto; font: 500 11.5px var(--sans); color: var(--ink-3); }
+.s4 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.legend { display: flex; gap: 14px; font-size: 11.5px; color: var(--ink-2); margin-top: 4px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; border: 1px solid var(--ink); }
+
+/* token meta popover */
+.pop { position: absolute; z-index: 5; width: 430px; padding: 14px 16px; background: #fff; border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); }
+.pop::before { content: ""; position: absolute; top: -9px; left: var(--ax, 46px); width: 14px; height: 14px; background: #fff; border-left: 2.5px solid var(--ink); border-top: 2.5px solid var(--ink); transform: rotate(45deg); }
+.pop h4 { margin: 0 0 2px; font: 700 16px var(--serif); display: flex; }
+.pop h4 small { margin-left: auto; font: 500 12px var(--sans); color: var(--ink-3); }
+.pop .sub { color: var(--ink-3); font-size: 12px; margin-bottom: 10px; }
+.pop table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.pop td, .pop th { padding: 5px 4px; border-top: 1px solid var(--line); text-align: left; }
+.pop th { font: 700 10.5px var(--sans); color: var(--ink-3); text-transform: uppercase; letter-spacing: .4px; border-top: none; }
+.pop td.n, .pop th.n { text-align: right; font-variant-numeric: tabular-nums; }
+.pop tr.tot td { font-weight: 700; border-top: 2px solid var(--ink); }
+.split { display: flex; height: 14px; border: 1.5px solid var(--ink); border-radius: 8px; overflow: hidden; margin: 6px 0 4px; }
+.split i { display: block; height: 100%; }
+
+/* health detail */
+.hd { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; margin-top: 14px; }
+.drv { display: grid; grid-template-columns: 92px 1fr 150px; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.drv:first-of-type { border-top: none; }
+.drv b { font-size: 14px; } .drv small { color: var(--ink-3); display: block; font-size: 11.5px; }
+.drv .big { height: 12px; border: 1.5px solid var(--ink); border-radius: 9px; background: #f1ece1; overflow: hidden; }
+.drv .big i { display: block; height: 100%; background: var(--amber); }
+.ev { display: grid; grid-template-columns: 52px 18px 1fr; gap: 6px; padding: 4px 0; font-size: 13px; align-items: center; }
+.ev time { color: var(--ink-3); font-variant-numeric: tabular-nums; font-size: 12px; }
+.ev .d { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--ec); }
+.devs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-size: 13px; }
+.devs div { display: flex; gap: 8px; align-items: center; }
+.devs small { color: var(--ink-3); margin-left: auto; }
+.cores { display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px; height: 86px; align-items: end; }
+.cores div { position: relative; height: 100%; border: 1.5px solid var(--ink); border-radius: 6px; background: #f1ece1; overflow: hidden; }
+.cores i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--blue); }
+.procs { width: 100%; border-collapse: collapse; font-size: 13px; }
+.procs td, .procs th { padding: 5px 6px; border-top: 1px solid var(--line); text-align: left; }
+.procs th { border-top: none; font: 700 10.5px var(--sans); color: var(--ink-3); text-transform: uppercase; }
+.procs .n { text-align: right; font-variant-numeric: tabular-nums; }
+
+.callout { position: absolute; z-index: 9; background: var(--ink); color: #fff; font: 600 12px var(--sans); padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
+.callout::after { content: ""; position: absolute; width: 8px; height: 8px; background: var(--ink); transform: rotate(45deg); }
+.callout.down::after { left: 18px; bottom: -4px; } .callout.up::after { left: 18px; top: -4px; } .callout.right::after { right: -4px; top: 9px; }
+.sample { position: fixed; right: 26px; bottom: 6px; font: 600 10.5px var(--sans); color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="hello"><span>Hello</span><b>Manoj</b>,</div>
+    <h1 class="brand"><span style="color:var(--blue)">M</span><span style="color:var(--pink)">y</span><span style="color:var(--green)">D</span><span style="color:var(--amber)">e</span><span style="color:var(--violet)">s</span><span style="color:var(--red)">k</span></h1>
+    <div class="who"><div><div class="t">7:03 pm IST</div><div class="d">Tuesday, 20th October 2026</div></div><div class="avatar">M</div></div>
+  </header>
+  <main class="panels" id="panels"></main>
+</div>
+<div class="sample">Design mockup · sample data</div>
+
+<script>
+const STATE = (location.hash || "#lobby").slice(1);
+const I = {
+  refresh: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>',
+  max: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M10 20H4v-6"/><path d="M20 4l-7 7"/><path d="M4 20l7-7"/></svg>',
+  restore: '<svg viewBox="0 0 24 24"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>',
+};
+const ib = (k, title, hint) => `<button class="ib ${hint ? "hint" : ""}" title="${title}">${I[k]}</button>`;
+function head(color, letter, title, meta, acts) {
+  return `<div class="ph" style="--pc:${color}"><span class="badge">${letter}</span><h2>${title}</h2><span class="meta">${meta || ""}</span><div class="acts">${acts}</div></div>`;
+}
+const ring = (pct, color, label, val, detail, sel) => {
+  const off = 113.1 * (1 - pct / 100);
+  return `<div class="g ${sel ? "sel" : ""}" style="--gc:${color}"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" stroke="#e7e1d4"/><circle cx="22" cy="22" r="18" stroke="${color}" stroke-linecap="round" stroke-dasharray="113.1" stroke-dashoffset="${off}"/></svg>
+    <div><b>${val}</b><span>${label}</span><small>${detail}</small></div></div>`;
+};
+
+/* ---------- health ---------- */
+function healthBody(sel) {
+  return `<div class="gauges">
+      ${ring(12, "var(--blue)", "CPU", "12%", "8 cores · 2.4 GHz", sel === "cpu")}
+      ${ring(41, "var(--violet)", "Memory", "41%", "6.5 of 15.8 GB", sel === "mem")}
+      ${ring(50, "var(--amber)", "Storage", "50%", "3 drives · 1 USB", sel === "disk")}
+      <div class="facts"><div><span>Last reboot</span><b>19 Oct 2026, 8:00 AM</b></div><div><span>Last sign-in</span><b>20 Oct 2026, 9:12 AM</b></div><div><span>Up for</span><b>1 d 11 h</b></div></div>
+    </div>
+    <div class="inds">
+      <span class="chip">🖴 C: <span class="bar"><i style="width:50%"></i></span><small>50%</small></span>
+      <span class="chip">🖴 D: <span class="bar"><i style="width:22%"></i></span><small>22%</small></span>
+      <span class="chip usb"><span class="tagx">USB</span> E: <span class="bar"><i style="width:12%"></i></span><small>12%</small></span>
+      <span class="chip usb">🔌 USB <small>3</small></span>
+      <span class="chip green">🎧 Headphones</span>
+      <span class="chip green">👆 Touch <small>on</small></span>
+      <span class="chip">🔋 82% <small>charging</small></span>
+      <span class="chip">📶 Wi-Fi <small>↓ 2.4 MB/s</small></span>
+      <span class="keys"><span class="key lit">Caps</span><span class="key lit">Num</span><span class="key">Scroll</span></span>
+    </div>`;
+}
+function healthDetail() {
+  return `<div class="hd">
+    <div class="card"><h4>Drives <small>click a drive to open it</small></h4>
+      <div class="drv"><div><b>C:</b><small>Windows · NTFS</small></div><div class="big"><i style="width:50%"></i></div><div>118 GB free of 237 GB</div></div>
+      <div class="drv"><div><b>D:</b><small>Data · NTFS</small></div><div class="big"><i style="width:22%"></i></div><div>728 GB free of 931 GB</div></div>
+      <div class="drv"><div><b>E: <span class="tagx">USB</span></b><small>SANDISK · FAT32</small></div><div class="big"><i style="width:12%;background:var(--cyan)"></i></div><div>28.1 GB free of 29.8 GB</div></div>
+      <div class="drv"><div><b>G:</b><small>Google Drive · network</small></div><div class="big"><i style="width:64%;background:var(--slate)"></i></div><div>5.4 GB free of 15 GB</div></div>
+    </div>
+    <div class="card"><h4>Today's device log <small>last 24 h</small></h4>
+      <div class="ev"><time>18:42</time><span class="d" style="--ec:var(--cyan)"></span>USB drive E: (SANDISK) connected</div>
+      <div class="ev"><time>17:15</time><span class="d" style="--ec:var(--green)"></span>Headphones plugged into audio jack</div>
+      <div class="ev"><time>14:03</time><span class="d" style="--ec:var(--amber)"></span>C: passed 50% full</div>
+      <div class="ev"><time>11:30</time><span class="d" style="--ec:var(--cyan)"></span>Phone connected (Pixel 9)</div>
+      <div class="ev"><time>09:12</time><span class="d" style="--ec:var(--blue)"></span>Signed in</div>
+    </div>
+    <div class="card"><h4>Connected devices <small>USB · audio · input</small></h4>
+      <div class="devs"><div>💾 SanDisk Ultra USB 3.0<small>storage</small></div><div>🎮 Logitech USB Receiver<small>input</small></div>
+      <div>📷 HD Webcam<small>camera</small></div><div>🎧 Headphones (Realtek)<small>audio</small></div>
+      <div>👆 Touch screen<small>10-point</small></div><div>⌨️ Built-in keyboard<small>input</small></div></div>
+    </div>
+    <div class="card"><h4>Storage trend <small>C: used, last 30 days</small></h4>
+      ${sparkline([38,38,39,39,40,40,41,41,42,42,42,43,44,44,45,45,45,46,46,47,47,47,48,48,49,49,49,50,50,50], "var(--amber)")}
+    </div>
+  </div>`;
+}
+function sparkline(vals, color) {
+  const w = 430, h = 70, lo = Math.min(...vals) - 2, hi = Math.max(...vals) + 2;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * (w - 40) + 4},${h - 14 - ((v - lo) / (hi - lo)) * (h - 22)}`).join(" ");
+  const last = pts.split(" ").at(-1).split(",");
+  return `<div class="chart"><svg viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${last[0]}" cy="${last[1]}" r="4" fill="${color}" stroke="#1d2233" stroke-width="1.5"/>
+    <text x="${+last[0] + 8}" y="${+last[1] + 4}" font-size="12" font-weight="700" fill="#1d2233" font-family="Segoe UI, sans-serif">50%</text>
+    <text x="4" y="${h - 1}" font-size="10.5" fill="#8a90a3" font-family="Segoe UI, sans-serif">21 Sep</text>
+    <text x="${w - 70}" y="${h - 1}" font-size="10.5" fill="#8a90a3" font-family="Segoe UI, sans-serif">today</text></svg></div>`;
+}
+function healthCollapsed() {
+  const m = (p, c, label) => `<span class="mini"><span class="mini-ring" style="--p:${p};--c:${c}"></span><b>${p}%</b>${label}</span>`;
+  return `${m(12, "var(--blue)", "CPU")}${m(41, "var(--violet)", "Mem")}${m(50, "var(--amber)", "Storage")}<span class="vr"></span>
+    <span class="chip usb"><span class="tagx">USB</span> E:</span><span class="chip green">🎧</span><span class="chip">🔋 82%</span>
+    <span class="keys"><span class="key lit">Caps</span><span class="key lit">Num</span><span class="key">Scroll</span></span>`;
+}
+
+/* ---------- tools ---------- */
+const SECTIONS = [
+  ["OS Monitor", "var(--blue)", ["★ Live monitor", "~Startup apps", "~Cleanup helper"]],
+  ["My Finance", "var(--green)", ["~Portfolio tracker", "~Bank statement import", "~Monthly budget"]],
+  ["My Events", "var(--pink)", ["~Calendar sync", "~Birthdays", "~Reminders"]],
+  ["My Social", "var(--violet)", ["★ Zucker", "~Follow Graph", "~LinkedIn publisher"]],
+  ["My Chest", "var(--amber)", ["~Bill tracker", "~Spend analyzer", "~Subscriptions"]],
+  ["Junkyard", "var(--red)", ["★ Clip Maker", "★ TechBite", "~Resume Builder", "~AI Billing"]],
+  ["My Mirror", "var(--cyan)", ["~Photo gallery", "~Video library"]],
+  ["My Block", "var(--slate)", ["~Document vault", "~Certificate store"]],
+];
+function toolsBody() {
+  return `<div class="toolgrid">${SECTIONS.map(([n, c, tools]) => `<div class="sec" style="--sc:${c}"><h3><i></i>${n}<small>${tools.filter((t) => !t.startsWith("~")).length || ""}</small></h3>
+    ${tools.map((t) => t.startsWith("~") ? `<a class="soon">${t.slice(1)}</a>` : `<a>${t.slice(2)} <span class="star">★</span></a>`).join("")}</div>`).join("")}</div>`;
+}
+function toolsCollapsed() {
+  const n = (c, txt, t) => `<span class="note" style="--nc:${c}"><span class="dot"></span>${txt}<time>${t}</time></span>`;
+  const f = (c, txt) => `<span class="fav" style="--sc:${c}"><i></i>${txt}</span>`;
+  return `<span class="strip-label">🔔 3 new</span>${n("var(--cyan)", "USB drive E: connected", "18:42")}${n("var(--red)", "Clip Maker saved “OSPF EXSTART fix”", "18:20")}<span class="note" style="--nc:var(--ink-3)">+1 more</span>
+    <span class="vr"></span><span class="strip-label">★ Favourites</span>${f("var(--red)", "Clip Maker")}${f("var(--violet)", "Zucker")}${f("var(--red)", "TechBite")}${f("var(--blue)", "OS Monitor")}`;
+}
+
+/* ---------- claude ---------- */
+const usageTiles = (sel) => `
+  <div class="stat ${sel === "hour" ? "sel" : ""}"><span class="info">i</span><div class="k">Last hour</div><div class="v">18.4k</div><div class="c">$0.21 <small>· ₹17.70</small></div></div>
+  <div class="stat ${sel === "day" ? "sel" : ""}"><span class="info">i</span><div class="k">Today</div><div class="v">212k</div><div class="c">$2.38 <small>· ₹200</small></div></div>
+  <div class="stat ${sel === "month" ? "sel" : ""}"><span class="info">i</span><div class="k">October</div><div class="v">4.1M</div><div class="c">$46.20 <small>· ₹3,885</small></div></div>
+  <div class="stat ${sel === "year" ? "sel" : ""}"><span class="info">i</span><div class="k">2026</div><div class="v">31.6M</div><div class="c">$352.80 <small>· ₹29,670</small></div></div>`;
+const billCard = `<div class="bill"><div class="row"><span class="stat-k">Billing · October</span><small>budget $75</small></div>
+  <div class="row"><span class="v">$46.20</span><small>projected $70.90</small></div><div class="meter"><i style="width:62%"></i></div><small>62% of monthly budget · resets 1 Nov</small></div>`;
+const promptBar = (big) => `<div class="prompt"><div class="in" style="${big ? "" : ""}">What are you looking for?</div><span class="btn ghost">📎</span><span class="btn">Ask Claude</span></div>`;
+function claudeBody() {
+  return `<div class="usage">${usageTiles()}${billCard}</div>${promptBar()}`;
+}
+function hourChart() {
+  const v = [0,0,0,0,0,0,0,2.1,6.4,11.8,14.2,9.6,4.1,8.8,16.5,21.3,12.2,7.4,24.9,18.4];
+  const w = 440, h = 150, bw = (w - 40) / 24, max = 25;
+  let bars = "";
+  v.forEach((x, i) => {
+    const bh = (x / max) * (h - 34);
+    const now = i === v.length - 1;
+    bars += `<rect x="${32 + i * bw + 2}" y="${h - 20 - bh}" width="${bw - 4}" height="${Math.max(bh, x ? 2 : 0)}" rx="2" fill="${now ? "#d97757" : "#e9b49c"}" stroke="#1d2233" stroke-width="${x ? 1 : 0}"/>`;
+  });
+  const grid = [0, 10, 20].map((t) => { const y = h - 20 - (t / max) * (h - 34); return `<line x1="30" x2="${w}" y1="${y}" y2="${y}" stroke="#e7e1d4"/><text x="24" y="${y + 4}" text-anchor="end" font-size="10.5" fill="#8a90a3">${t}k</text>`; }).join("");
+  const xl = [0, 6, 12, 18].map((hr) => `<text x="${32 + hr * bw + bw / 2}" y="${h - 5}" text-anchor="middle" font-size="10.5" fill="#8a90a3">${hr}:00</text>`).join("");
+  return `<div class="chart"><svg viewBox="0 0 ${w} ${h}" font-family="Segoe UI, sans-serif">${grid}${bars}${xl}
+</svg><div class="legend"><span><i style="background:#e9b49c"></i>Earlier hours</span><span><i style="background:#d97757"></i>Current hour (18.4k so far)</span><span>Busiest: 18:00 · 24.9k</span></div></div>`;
+}
+function claudeExpanded() {
+  return `<div class="cl-grid">
+    <div class="chat">
+      <div class="msgs">
+        <div class="m u">Summarise what TechBite found today on GenAI and Spring.</div>
+        <div class="m a">Four new items since this morning:
+          <ul><li><b>GenAI:</b> two new open-weight model releases and an agents benchmark update</li>
+          <li><b>Spring:</b> a Spring Boot patch release with a security fix — worth updating your demo repo</li>
+          <li><b>Cybersec:</b> one critical advisory affecting a library in your GitHub projects</li></ul>
+          <span class="tk">2,140 in · 612 out · $0.03 · claude-sonnet-5-5</span></div>
+        <div class="m u">Draft a LinkedIn post about the Spring fix for Zucker.</div>
+        <div class="m a">Here's a 120-word draft with a code snippet and three hashtags. Open it in Zucker to schedule it.
+          <span class="tk">3,880 in · 945 out · $0.05 · claude-sonnet-5-5</span></div>
+      </div>
+      ${promptBar(true)}
+    </div>
+    <div class="side">
+      <div class="s4">${usageTiles("day")}</div>
+      <div class="card"><h4>Tokens per hour · today <small>input + output</small></h4>${hourChart()}</div>
+      ${billCard}
+    </div>
+  </div>`;
+}
+function claudeCollapsed() {
+  return `<div class="prompt" style="flex:1"><div class="in" style="padding:7px 12px;font-size:14px">What are you looking for?</div></div>
+    <span class="mini">Today <b>212k</b> tokens</span><span class="mini" style="color:var(--green)"><b>$2.38</b></span>`;
+}
+function tokenPopover() {
+  return `<div class="pop" style="right:286px;top:236px">
+    <h4>Today's tokens <small>20 Oct · 9:12 am – now</small></h4>
+    <div class="sub">212,480 tokens across 64 requests · $2.38</div>
+    <div class="split"><i style="width:58%;background:#e9b49c"></i><i style="width:19%;background:#d97757"></i><i style="width:17%;background:#7b4fe0"></i><i style="width:6%;background:#0aa5b8"></i></div>
+    <div class="legend" style="flex-wrap:wrap"><span><i style="background:#e9b49c"></i>Input 123k</span><span><i style="background:#d97757"></i>Output 40k</span><span><i style="background:#7b4fe0"></i>Cache read 36k</span><span><i style="background:#0aa5b8"></i>Cache write 13k</span></div>
+    <table style="margin-top:10px"><tr><th>Model</th><th class="n">Requests</th><th class="n">Tokens</th><th class="n">Cost</th></tr>
+      <tr><td>claude-sonnet-5-5</td><td class="n">51</td><td class="n">168.2k</td><td class="n">$1.71</td></tr>
+      <tr><td>claude-haiku-5-5</td><td class="n">11</td><td class="n">31.9k</td><td class="n">$0.09</td></tr>
+      <tr><td>claude-opus-5-5</td><td class="n">2</td><td class="n">12.4k</td><td class="n">$0.58</td></tr>
+      <tr class="tot"><td>Total</td><td class="n">64</td><td class="n">212.5k</td><td class="n">$2.38</td></tr></table>
+    <table style="margin-top:8px"><tr><th>By tool</th><th class="n">Tokens</th><th class="n">Cost</th></tr>
+      <tr><td>Claude chat</td><td class="n">118.6k</td><td class="n">$1.42</td></tr>
+      <tr><td>TechBite</td><td class="n">61.3k</td><td class="n">$0.58</td></tr>
+      <tr><td>Zucker</td><td class="n">32.6k</td><td class="n">$0.38</td></tr></table>
+    <div class="sub" style="margin:10px 0 0">Avg 3.3k tokens per request · busiest hour 18:00 (24.9k)</div>
+  </div>`;
+}
+
+/* ---------- assemble states ---------- */
+const P = document.getElementById("panels");
+const panel = (cls, head_, body) => `<section class="panel ${cls}">${head_}<div class="pb">${body}</div></section>`;
+const HC = "var(--green)", TC = "var(--violet)", CC = "var(--clay)";
+const healthActs = (expanded, hint) => ib("refresh", "Refresh stats", hint === "refresh") + (expanded ? ib("restore", "Restore", hint === "restore") : ib("max", "Maximize", hint === "max"));
+const claudeActs = (expanded, hint) => ib("refresh", "Refresh token stats", hint === "refresh") + (expanded ? ib("restore", "Restore", hint === "restore") : ib("max", "Maximize", hint === "max"));
+const toolActs = (expanded) => expanded ? ib("restore", "Restore") : ib("max", "Maximize");
+
+let html = "", rows = "";
+let callouts = "";
+if (STATE === "lobby") {
+  rows = "auto 1fr auto";
+  html = panel("", head(HC, "H", "My Health", "updated 7:03 pm · click any gauge or chip for details", healthActs(false)), healthBody())
+       + panel("", head(TC, "T", "Tools", "8 sections · 4 ready · ★ favourites", toolActs(false)), toolsBody())
+       + panel("", head(CC, "C", "Claude", "token usage updated 7:02 pm · click a number for details", claudeActs(false)), claudeBody());
+} else if (STATE === "health") {
+  rows = "1fr auto auto";
+  html = panel("", head(HC, "H", "My Health", "Storage selected · updated 7:03 pm", healthActs(true, "restore")), healthBody("disk") + healthDetail())
+       + panel("collapsed", head(TC, "T", "Tools", "", toolActs(false)), toolsCollapsed())
+       + panel("collapsed", head(CC, "C", "Claude", "", ""), claudeCollapsed());
+  callouts = `<div class="callout" style="left:370px;top:96px">Clicked Storage → Health expands; Tools and Claude shrink to strips</div>`;
+} else if (STATE === "claude" || STATE === "tokens") {
+  rows = "auto auto 1fr";
+  html = panel("collapsed", head(HC, "H", "My Health", "", healthActs(false)), healthCollapsed())
+       + panel("collapsed", head(TC, "T", "Tools", "", toolActs(false)), toolsCollapsed())
+       + panel("", head(CC, "C", "Claude", "token usage updated 7:02 pm", claudeActs(true, STATE === "claude" ? "refresh" : "")), claudeExpanded());
+  if (STATE === "tokens") callouts = tokenPopover();
+} else if (STATE === "max") {
+  rows = "1fr";
+  html = panel("", head(CC, "C", "Claude", "maximized · press Restore or Esc to return to the lobby", claudeActs(true, "restore")), claudeExpanded());
+}
+P.style.gridTemplateRows = rows;
+P.innerHTML = html;
+if (callouts) document.body.insertAdjacentHTML("beforeend", callouts);
+if (STATE === "tokens") {
+  // highlight the clicked "Today" tile
+  const tiles = document.querySelectorAll(".side .stat");
+  tiles.forEach((t) => t.classList.remove("sel"));
+  tiles[1].classList.add("sel");
+  const r = tiles[1].getBoundingClientRect();
+  const pop = document.querySelector(".pop");
+  const left = Math.min(r.right - pop.offsetWidth + 10, innerWidth - pop.offsetWidth - 16);
+  pop.style.right = "auto";
+  pop.style.left = `${left}px`;
+  pop.style.top = `${r.bottom + 12}px`;
+  pop.style.setProperty("--ax", `${r.left + r.width / 2 - left - 7}px`);
+}
+</script>
+</body>
+</html>
