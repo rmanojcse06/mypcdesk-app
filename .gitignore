@@ -1,0 +1,19 @@
+# Your personal settings and everything tools save
+config.json
+data/
+cookies*.txt
+.env
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

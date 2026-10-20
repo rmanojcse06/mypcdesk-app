@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install core packages
+        run: pip install psutil markdown
+      - name: Check every Python file compiles
+        run: python -m compileall -q core tools mydesk.py mytool.py
+      - name: Check every tool.json is valid JSON
+        run: python -c "import json,glob; [json.load(open(f, encoding='utf-8')) for f in glob.glob('tools/*/tool.json')]; print('ok')"
+      - name: Smoke tests
+        run: python -m unittest discover tests -v

@@ -1,0 +1,94 @@
+{
+  "sections": [
+    {
+      "id": "os_monitor",
+      "name": "OS Monitor",
+      "color": "#2f6fed",
+      "blurb": "CPU, memory, disks, network and the busiest apps right now.",
+      "builtin": "os_monitor",
+      "planned": [
+        "Startup apps",
+        "Temperature log",
+        "Cleanup helper"
+      ]
+    },
+    {
+      "id": "my_finance",
+      "name": "My Finance",
+      "color": "#0e9f6e",
+      "blurb": "Investments, accounts and money goals.",
+      "planned": [
+        "Portfolio tracker",
+        "Bank statement import",
+        "Monthly budget"
+      ]
+    },
+    {
+      "id": "my_events",
+      "name": "My Events",
+      "color": "#e3487a",
+      "blurb": "Calendars, birthdays and reminders.",
+      "planned": [
+        "Calendar sync",
+        "Birthdays",
+        "Reminders"
+      ]
+    },
+    {
+      "id": "my_social",
+      "name": "My Social",
+      "color": "#7b4fe0",
+      "blurb": "Everything you follow and post across social media. Zucker is the social media manager.",
+      "planned": [
+        "Zucker",
+        "Follow Graph",
+        "LinkedIn publisher",
+        "Blog post drafts"
+      ]
+    },
+    {
+      "id": "my_chest",
+      "name": "My Chest",
+      "color": "#e8890c",
+      "blurb": "Bills, spending and subscriptions.",
+      "planned": [
+        "Bill tracker",
+        "Spend analyzer",
+        "Subscriptions"
+      ]
+    },
+    {
+      "id": "junkyard",
+      "name": "Junkyard",
+      "color": "#e5484d",
+      "blurb": "Tools you build yourself. Each one is a script you can also run on its own.",
+      "planned": [
+        "TechBite",
+        "Resume Builder",
+        "AI Billing"
+      ]
+    },
+    {
+      "id": "my_mirror",
+      "name": "My Mirror",
+      "color": "#0aa5b8",
+      "blurb": "Your photos and videos.",
+      "planned": [
+        "Photo gallery",
+        "Video library",
+        "Duplicate finder"
+      ]
+    },
+    {
+      "id": "my_block",
+      "name": "My Block",
+      "color": "#4b5876",
+      "blurb": "Certificates and important documents.",
+      "planned": [
+        "Document vault",
+        "Certificate store",
+        "Expiry alerts"
+      ]
+    }
+  ]
+}

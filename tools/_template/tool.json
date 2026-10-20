@@ -1,0 +1,12 @@
+{
+  "id": "my_tool",
+  "name": "My Tool",
+  "section": "junkyard",
+  "script": "my_tool.py",
+  "description": "One sentence about what this tool does.",
+  "run_label": "Run",
+  "inputs": [
+    {"name": "name", "label": "Name", "type": "text", "positional": true, "required": true, "placeholder": "e.g. hello"}
+  ],
+  "outputs": {"glob": "notes/*.md", "label": "Results", "empty": "Nothing yet."}
+}

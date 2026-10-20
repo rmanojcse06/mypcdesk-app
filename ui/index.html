@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MyDesk</title>
+<link rel="icon" href="/ui/mydesk.ico">
+<link rel="stylesheet" href="/ui/style.css">
+<script>window.MYDESK_TOKEN = "{{TOKEN}}";</script>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="hello"><span>Hello</span><strong id="userName">there</strong>,</div>
+    <h1 class="brand" id="brand" aria-label="MyDesk"></h1>
+    <div class="who">
+      <div class="clock"><div id="clockTime">--:--</div><div id="clockDate"></div></div>
+      <div class="avatar" id="avatar" title="You">M</div>
+    </div>
+  </header>
+
+  <section class="health card" aria-label="Health">
+    <span class="tag tag-health">Health</span>
+    <div class="gauge" data-key="cpu" style="--c: var(--blue)"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="arc" cx="22" cy="22" r="18"/></svg><div><b class="val">–</b><span>CPU</span><small class="detail"></small></div></div>
+    <div class="gauge" data-key="memory" style="--c: var(--violet)"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="arc" cx="22" cy="22" r="18"/></svg><div><b class="val">–</b><span>Memory</span><small class="detail"></small></div></div>
+    <div class="gauge" data-key="storage" style="--c: var(--amber)"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="18"/><circle class="arc" cx="22" cy="22" r="18"/></svg><div><b class="val">–</b><span>Storage</span><small class="detail"></small></div></div>
+    <dl class="facts">
+      <div><dt>Last reboot</dt><dd id="lastReboot">–</dd></div>
+      <div><dt>Last sign-in</dt><dd id="lastSignIn">–</dd></div>
+      <div><dt>Up for</dt><dd id="uptime">–</dd></div>
+    </dl>
+    <div class="indicators" aria-label="Drives and devices">
+      <div class="ind-group" id="driveChips"></div>
+      <div class="ind-group" id="deviceChips"></div>
+      <div class="ind-group keys" id="lockChips"></div>
+    </div>
+  </section>
+
+  <div class="body">
+    <nav class="sidebar card" id="sidebar" aria-label="Sections"></nav>
+    <main class="stage card" id="stage"></main>
+  </div>
+
+  <section class="claude card">
+    <label for="ask" class="claude-label">Claude</label>
+    <div class="ask-wrap">
+      <input id="ask" type="text" placeholder="What are you looking for?" autocomplete="off">
+      <div class="results" id="results" hidden></div>
+    </div>
+    <button class="btn" id="askBtn">Ask</button>
+  </section>
+  <div class="answer card" id="answer" hidden><button class="x" id="answerClose" aria-label="Close">×</button><div id="answerText"></div></div>
+</div>
+<script src="/ui/app.js"></script>
+</body>
+</html>

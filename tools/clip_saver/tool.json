@@ -1,0 +1,16 @@
+{
+  "id": "clip_saver",
+  "name": "Clip Maker",
+  "section": "junkyard",
+  "accent": "#e5484d",
+  "script": "clip_saver.py",
+  "description": "Paste a reel, short or video link from YouTube, Instagram, Facebook or LinkedIn. Saves the video, screenshots, the text inside them (OCR) and the caption as a Markdown note.",
+  "run_label": "Save clip",
+  "inputs": [
+    {"name": "url", "label": "Reel / video link", "type": "url", "positional": true, "required": true, "placeholder": "https://www.instagram.com/reel/…"},
+    {"name": "cookies-from-browser", "label": "Use my login from", "type": "select", "options": [["", "No login"], ["firefox", "Firefox"], ["edge", "Edge"], ["chrome", "Chrome"], ["brave", "Brave"]], "default": ""},
+    {"name": "no-video", "label": "Don't keep the video file", "type": "checkbox"},
+    {"name": "no-ocr", "label": "Skip OCR", "type": "checkbox"}
+  ],
+  "outputs": {"glob": "clips/*/*/clip.md", "label": "Saved clips", "empty": "No clips yet. Paste a link above to save your first one."}
+}
