@@ -2,6 +2,11 @@
   "name": "Your Name",
   "timezone_label": "",
   "start_minimized": false,
-  "window": {"width": 1320, "height": 860},
+  "close_button": "minimize",
+  "tray_quit": false,
+  "window": {
+    "width": 1320,
+    "height": 860
+  },
   "claude_model": "claude-sonnet-5-5"
 }

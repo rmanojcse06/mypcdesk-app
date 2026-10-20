@@ -1,0 +1,10 @@
+{
+  "id": "mycheats",
+  "name": "MyCheats",
+  "section": "junkyard",
+  "kind": "viewer",
+  "script": "mycheats.py",
+  "accent": "#e5484d",
+  "description": "Your cheatbook. Open a searchable cheatsheet (Git, Windows CMD, PowerShell and your own) in its own window.",
+  "items_label": "Cheatsheets"
+}

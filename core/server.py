@@ -8,18 +8,41 @@ from __future__ import annotations
 import json
 import mimetypes
 import os
+import re
 import secrets
+import subprocess
 import threading
 import urllib.error
 import urllib.request
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from . import jobs, outputs, registry, system_health
+from . import dialogs, events, jobs, outputs, registry, system_health
 from .config import UI_DIR, load_config, load_sections
 
 TOKEN = secrets.token_urlsafe(24)
+SAFE_NAME = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_show_window = None  # set by mydesk.py: brings the main window to the front
+
+
+def set_show_window(fn) -> None:
+    global _show_window
+    _show_window = fn
+
+
+def _run_tool_page(tool: dict, args: list[str], timeout: int = 30) -> str:
+    """Viewer tools answer --list-json / --html <name> on stdout."""
+    proc = subprocess.run([jobs._python_for_tools(), tool["script_path"], *args], capture_output=True,
+                          text=True, encoding="utf-8", errors="replace", timeout=timeout,
+                          creationflags=jobs.CREATE_NO_WINDOW, cwd=tool["folder"])
+    if proc.returncode != 0:
+        raise RuntimeError((proc.stderr or proc.stdout or "tool failed").strip()[-400:])
+    return proc.stdout
+
+
+def page_url(tool_id: str, name: str) -> str:
+    return f"/page/{quote(tool_id)}/{quote(name)}?t={quote(TOKEN)}"
 files_url = outputs.files_url_factory(TOKEN)
 mimetypes.add_type("text/markdown", ".md")
 mimetypes.add_type("image/webp", ".webp")
@@ -33,6 +56,7 @@ def _state() -> dict:
         "sections": load_sections(),
         "tools": [registry.public_view(t) for t in registry.discover_tools()],
         "claude_enabled": bool(os.environ.get("ANTHROPIC_API_KEY")),
+        "native_dialogs": dialogs.has_backend(),
     }
 
 
@@ -106,6 +130,24 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path.startswith("/files/"):
                 return self._file(path)
+            if path.startswith("/page/"):
+                _, _, tool_id, name = path.split("/", 3)
+                tool, name = registry.get_tool(unquote(tool_id)), unquote(name)
+                if not tool or not SAFE_NAME.match(name):
+                    return self._send(404, b"not found", "text/plain")
+                html_page = _run_tool_page(tool, ["--html", name])
+                return self._send(200, html_page.encode(), "text/html; charset=utf-8")
+            if path == "/api/ping":
+                return self._json({"ok": True, "pid": os.getpid()})
+            if path == "/api/dialogs":
+                return self._json(dialogs.list_dialogs())
+            if path == "/api/events":
+                return self._json(events.overview())
+            if path == "/api/tool-items":
+                tool = registry.get_tool(q.get("tool", [""])[0])
+                if not tool or tool.get("kind") != "viewer":
+                    return self._json([])
+                return self._json(json.loads(_run_tool_page(tool, ["--list-json"]) or "[]"))
             if path == "/api/state":
                 return self._json(_state())
             if path == "/api/health":
@@ -127,6 +169,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": str(exc)}, 403)
         except FileNotFoundError:
             return self._json({"error": "not found"}, 404)
+        except (RuntimeError, subprocess.TimeoutExpired, ValueError) as exc:
+            return self._json({"error": str(exc)}, 500)
         self._send(404, b"not found", "text/plain")
 
     def do_POST(self) -> None:
@@ -141,6 +185,36 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"error": "unknown tool"}, 404)
                 args = registry.build_args(tool, body.get("values", {}))
                 return self._json({"job": jobs.start_job(tool, args)})
+            if url.path == "/api/dialogs/open":
+                tool = registry.get_tool(body.get("tool", ""))
+                name = str(body.get("name", ""))
+                if not tool or not SAFE_NAME.match(name):
+                    return self._json({"error": "unknown page"}, 404)
+                title = str(body.get("title") or f"{tool['name']} · {name}")[:80]
+                return self._json(dialogs.open_dialog(title, page_url(tool["id"], name)))
+            if url.path == "/api/dialogs/close":
+                if body.get("all"):
+                    dialogs.close_all()
+                else:
+                    dialogs.close(str(body.get("id", "")))
+                return self._json({"ok": True, "count": dialogs.count()})
+            if url.path == "/api/dialogs/focus":
+                dialogs.focus(str(body.get("id", "")))
+                return self._json({"ok": True})
+            if url.path == "/api/events/add":
+                ev = events.add(body.get("title", ""), body.get("date", ""), body.get("kind", "other"),
+                                bool(body.get("yearly")), body.get("note", ""))
+                return self._json(ev)
+            if url.path == "/api/events/ack":
+                events.ack(str(body.get("id", "")), str(body.get("date", "")), bool(body.get("undo")))
+                return self._json({"ok": True})
+            if url.path == "/api/events/delete":
+                events.delete(str(body.get("id", "")))
+                return self._json({"ok": True})
+            if url.path == "/api/show":
+                if _show_window:
+                    _show_window()
+                return self._json({"ok": True})
             if url.path == "/api/claude":
                 return self._json({"answer": _ask_claude(str(body.get("q", ""))[:4000])})
             if url.path == "/api/open-folder":
@@ -153,7 +227,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": str(exc)}, 400)
         self._send(404, b"not found", "text/plain")
 
-    def _file(self, path: str) -> None:
+    def _file(self, path: str) -> None:  # noqa: C901
         _, _, tool_id, rel = path.split("/", 3)
         target = outputs.safe_path(unquote(tool_id), unquote(rel))
         if not target.is_file():

@@ -16,6 +16,8 @@ DEFAULT_CONFIG = {
     "name": "",
     "timezone_label": "",
     "start_minimized": False,
+    "close_button": "minimize",   # "minimize" keeps it on the taskbar, "tray" hides it to the tray icon
+    "tray_quit": False,           # True adds "Quit MyDesk" to the tray menu; otherwise end it in Task Manager
     "window": {"width": 1320, "height": 860},
     "claude_model": "claude-sonnet-5-5",
 }

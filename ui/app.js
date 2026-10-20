@@ -26,7 +26,15 @@ async function api(path, body) {
   return data;
 }
 
-function toast(msg) {
+const ACTIVITY = []; // this session's notifications, newest first
+let unseenActivity = 0;
+function toast(msg, log = true) {
+  if (log) {
+    ACTIVITY.unshift({ msg, at: new Date() });
+    ACTIVITY.length = Math.min(ACTIVITY.length, 40);
+    unseenActivity++;
+    if (typeof updateBell === "function") updateBell();
+  }
   const t = document.createElement("div");
   t.className = "toast";
   t.textContent = msg;
@@ -362,6 +370,7 @@ function openTool(toolId) {
   store.set("mydesk.view", current);
   markNav();
   setStageColor(s.color);
+  if (tool.kind === "viewer") return openViewer(tool, s);
 
   const main = tool.inputs.filter((f) => f.positional || f.type === "url" || f.type === "text");
   const extra = tool.inputs.filter((f) => !main.includes(f));
@@ -484,6 +493,277 @@ async function openOutput(tool, path) {
   $("#folderBtn").onclick = () => api("/api/open-folder", { tool: tool.id, path }).catch((e) => toast(e.message));
 }
 
+/* ---------- viewer tools (e.g. MyCheats): pick an item, it opens in a dialog ---------- */
+async function openViewer(tool, s) {
+  $("#stage").innerHTML = `
+    <div class="view-head"><div class="badge">${esc(tool.name[0])}</div>
+      <div><div class="crumb">${esc(s.name)}</div><h2>${esc(tool.name)}</h2><p>${esc(tool.description || "")}</p></div></div>
+    <div class="panel"><h3>${esc(tool.items_label || "Items")} <span class="muted" id="itemCount"></span></h3><div class="sheets" id="items"><div class="empty">Loading…</div></div>
+      <div class="hint">Add your own: <code>run_tool ${esc(tool.id)} --new docker</code> creates a sheet in <code>data/${esc(tool.id)}/sheets</code>. Each one opens in its own window.</div></div>`;
+  const items = await api(`/api/tool-items?tool=${encodeURIComponent(tool.id)}`).catch((e) => { toast(e.message); return []; });
+  if (current.tool !== tool.id) return;
+  $("#itemCount").textContent = items.length ? `${items.length}` : "";
+  $("#items").innerHTML = items.map((it) => `
+    <button class="sheet" data-name="${esc(it.name)}" data-title="${esc(it.title)}" style="--hc:${esc(it.color)}">
+      <span class="open">Open ↗</span>${it.user ? `<span class="yours">YOURS</span>` : ""}
+      <div class="ic">${esc(it.title[0] || "?")}</div><h3>${esc(it.title)}</h3><p>${esc(it.blurb || "")}</p>
+      <div class="secs">${it.count} commands · ${esc(it.sections.slice(0, 4).join(", "))}${it.sections.length > 4 ? "…" : ""}</div></button>`).join("")
+    || `<div class="empty" style="grid-column:1/-1">Nothing here yet.</div>`;
+  $("#items").onclick = (e) => {
+    const b = e.target.closest(".sheet");
+    if (b) openDialog(tool, b.dataset.name, `${b.dataset.title} · ${tool.name}`);
+  };
+}
+
+/* ---------- dialogs: real windows in the desktop app, in-page pop-ups in a browser ---------- */
+let DIALOGS = [];
+let zTop = 50;
+
+async function openDialog(tool, name, title) {
+  try {
+    const r = await api("/api/dialogs/open", { tool: tool.id, name, title });
+    if (r.inline) {
+      const d = (await api("/api/dialogs")).find((x) => x.id === r.id);
+      if (d) showInlineDialog(d);
+    }
+    refreshDialogs();
+  } catch (err) {
+    toast(err.message);
+  }
+}
+
+function showInlineDialog(d) {
+  const n = document.querySelectorAll(".idlg").length;
+  const el = document.createElement("div");
+  el.className = "idlg";
+  el.dataset.id = d.id;
+  el.style.left = `${80 + n * 34}px`;
+  el.style.top = `${70 + n * 34}px`;
+  el.style.zIndex = ++zTop;
+  el.innerHTML = `<div class="idlg-bar"><b>${esc(d.title)}</b><button class="mini-btn" data-act="close" title="Close">✕</button></div><iframe title="${esc(d.title)}"></iframe>`;
+  $("iframe", el).src = d.url;
+  document.body.appendChild(el);
+  el.addEventListener("mousedown", () => { el.style.zIndex = ++zTop; });
+  $("[data-act=close]", el).onclick = () => closeDialog(d.id);
+  // drag by the title bar
+  const bar = $(".idlg-bar", el);
+  bar.addEventListener("mousedown", (e) => {
+    if (e.target.closest("button")) return;
+    const sx = e.clientX - el.offsetLeft, sy = e.clientY - el.offsetTop;
+    const frame = $("iframe", el);
+    frame.style.pointerEvents = "none";
+    const move = (ev) => { el.style.left = `${Math.max(0, ev.clientX - sx)}px`; el.style.top = `${Math.max(0, ev.clientY - sy)}px`; };
+    const up = () => { frame.style.pointerEvents = ""; removeEventListener("mousemove", move); removeEventListener("mouseup", up); };
+    addEventListener("mousemove", move);
+    addEventListener("mouseup", up);
+  });
+}
+
+async function closeDialog(id) {
+  await api("/api/dialogs/close", { id }).catch(() => {});
+  document.querySelector(`.idlg[data-id="${id}"]`)?.remove();
+  refreshDialogs();
+}
+
+async function focusDialog(id) {
+  const inline = document.querySelector(`.idlg[data-id="${id}"]`);
+  if (inline) { inline.style.zIndex = ++zTop; return; }
+  await api("/api/dialogs/focus", { id }).catch(() => {});
+}
+
+async function refreshDialogs() {
+  try { DIALOGS = await api("/api/dialogs"); } catch { return; }
+  // drop in-page windows the server no longer knows (e.g. closed from the tray)
+  document.querySelectorAll(".idlg").forEach((el) => { if (!DIALOGS.some((d) => d.id === el.dataset.id)) el.remove(); });
+  const n = DIALOGS.length;
+  $("#dlgCount").textContent = n;
+  $("#dlgBtn").classList.toggle("has", n > 0);
+  $("#dlgBtn").title = `${n} dialog window${n === 1 ? "" : "s"} opened by MyDesk`;
+  document.title = n ? `MyDesk — ${n} dialog${n === 1 ? "" : "s"} open` : "MyDesk";
+  if (!$("#dlgMenu").hidden) renderDialogMenu();
+}
+
+function renderDialogMenu() {
+  const ago = (t) => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 1 ? "just now" : m < 60 ? `${m} min` : `${Math.floor(m / 60)} h`; };
+  $("#dlgMenu").innerHTML = `<div class="hd">Open dialogs (${DIALOGS.length})${DIALOGS.length ? `<button class="mini-btn" data-all>Close all</button>` : ""}</div>` +
+    (DIALOGS.map((d) => `<div class="dlg-row"><button class="t" data-focus="${d.id}" title="Bring to front">${esc(d.title)}</button><small>${ago(d.opened)}</small><button class="x" data-close="${d.id}" title="Close">✕</button></div>`).join("")
+     || `<div class="none">No dialogs open. MyCheats sheets and other tool windows show up here.</div>`);
+}
+
+function setupDialogMenu() {
+  const btn = $("#dlgBtn"), menu = $("#dlgMenu");
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    document.querySelectorAll(".hpanel").forEach((x) => { x.hidden = true; });
+    menu.hidden = !menu.hidden;
+    btn.setAttribute("aria-expanded", String(!menu.hidden));
+    if (!menu.hidden) renderDialogMenu();
+  };
+  menu.onclick = async (e) => {
+    e.stopPropagation();
+    const t = e.target;
+    if (t.dataset.focus) focusDialog(t.dataset.focus);
+    if (t.dataset.close) closeDialog(t.dataset.close);
+    if (t.hasAttribute("data-all")) {
+      await api("/api/dialogs/close", { all: true }).catch(() => {});
+      refreshDialogs();
+    }
+  };
+  document.addEventListener("click", () => { menu.hidden = true; btn.setAttribute("aria-expanded", "false"); });
+  // In-page dialogs die with the page, so forget any left over from before a reload.
+  api("/api/dialogs").then((list) => Promise.all(list.filter((d) => d.inline)
+    .map((d) => api("/api/dialogs/close", { id: d.id }).catch(() => {})))).finally(refreshDialogs);
+  setInterval(refreshDialogs, 2000);
+}
+
+/* ---------- calendar + notifications ---------- */
+let EV = null;
+let remindedToday = false;
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+function whenLabel(days) {
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  if (days === -1) return "Yesterday";
+  return days > 0 ? `in ${days} days` : `${-days} days ago`;
+}
+function prettyDate(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${new Date(y, m - 1, d).toLocaleDateString("en-IN", { weekday: "short" })}, ${d} ${MONTHS[m - 1].slice(0, 3)}`;
+}
+function eventRow(e, canAck = true) {
+  const cls = ["ev-row", e.acked ? "acked" : e.days === 0 ? "today" : e.days > 0 && e.days <= 3 ? "soon" : ""].join(" ");
+  const extra = e.years ? ` · ${e.kind === "birthday" ? `turns ${e.years}` : `${e.years} years`}` : "";
+  const btn = canAck ? `<button class="ack ${e.acked ? "done" : ""}" data-ack="${esc(e.id)}" data-date="${e.date}" ${e.acked ? 'data-undo="1"' : ""}>${e.acked ? "Undo" : "✓ Got it"}</button>` : "";
+  return `<div class="${cls}"><span class="em">${e.icon}</span><div class="tx"><b>${esc(e.title)}</b>
+    <small>${prettyDate(e.date)}${extra}${e.note ? ` · ${esc(e.note)}` : ""}</small></div>
+    <span class="when">${whenLabel(e.days)}</span>${btn}<button class="ev-del" data-del="${esc(e.id)}" title="Delete event">✕</button></div>`;
+}
+
+async function loadEvents() {
+  try { EV = await api("/api/events"); } catch { return; }
+  const b = $("#calBadge");
+  b.hidden = !EV.pending;
+  b.textContent = EV.pending;
+  b.classList.toggle("hot", EV.due_soon > 0);
+  $("#calBtn").title = EV.pending ? `${EV.pending} upcoming event${EV.pending === 1 ? "" : "s"} in the next ${EV.window_days} days` : "Calendar: no upcoming events";
+  if (!remindedToday) {
+    remindedToday = true;
+    EV.upcoming.filter((e) => !e.acked && e.days <= 3).forEach((e) => toast(`${e.icon} ${e.title} — ${whenLabel(e.days).toLowerCase()}`, false));
+  }
+  if (!$("#calPanel").hidden) renderCalendar();
+  updateBell();
+}
+
+function renderCalendar() {
+  if (!EV) return;
+  const [y, m, d] = EV.today.split("-").map(Number);
+  const first = new Date(y, m - 1, 1).getDay(); // 0 = Sunday
+  const days = new Date(y, m, 0).getDate();
+  const winEnd = d + EV.window_days;
+  let cells = ["S", "M", "T", "W", "T", "F", "S"].map((x) => `<div class="dow">${x}</div>`).join("");
+  cells += "<div></div>".repeat(first);
+  for (let i = 1; i <= days; i++) {
+    const kinds = EV.month_days[i] || [];
+    const cls = ["d", i < d ? "past" : "", i === d ? "today" : "", i > d && i <= winEnd ? "win" : ""].join(" ");
+    cells += `<div class="${cls}" title="${kinds.length ? `${kinds.length} event(s)` : ""}">${i}<span class="dots">${kinds.slice(0, 3).map(() => "<i></i>").join("")}</span></div>`;
+  }
+  const kindOpts = Object.entries(EV.kinds).map(([k, ic]) => `<option value="${k}">${ic} ${k[0].toUpperCase() + k.slice(1)}</option>`).join("");
+  $("#calPanel").innerHTML = `
+    <h3>📅 ${MONTHS[m - 1]} ${y}<small>${EV.total} saved event${EV.total === 1 ? "" : "s"}</small></h3>
+    <div class="mcal">${cells}</div>
+    <h4>Coming up · next ${EV.window_days} days</h4>
+    ${EV.upcoming.map((e) => eventRow(e)).join("") || `<div class="ev-empty">Nothing in the next ${EV.window_days} days.</div>`}
+    <h4>Earlier this month</h4>
+    ${EV.earlier.map((e) => eventRow(e)).join("") || `<div class="ev-empty">No earlier events this month.</div>`}
+    <h4>Add an event</h4>
+    <form class="ev-form" id="evForm" autocomplete="off">
+      <input class="full" name="title" placeholder="e.g. Aarav's birthday, Cloud seminar" required maxlength="120">
+      <input name="date" type="date" required value="${EV.today}">
+      <select name="kind">${kindOpts}</select>
+      <input class="full" name="note" placeholder="Note (optional): venue, gift idea…" maxlength="300">
+      <label class="check"><input type="checkbox" name="yearly"> Repeats every year</label>
+      <button class="btn" type="submit">Add event</button>
+    </form>`;
+  const f = $("#evForm");
+  f.kind.onchange = () => { f.yearly.checked = ["birthday", "anniversary"].includes(f.kind.value); };
+  f.onsubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api("/api/events/add", { title: f.title.value, date: f.date.value, kind: f.kind.value, yearly: f.yearly.checked, note: f.note.value });
+      toast(`Added: ${f.title.value}`);
+      await loadEvents();
+      renderCalendar();
+    } catch (err) { toast(err.message, false); }
+  };
+}
+
+function updateBell() {
+  if (!$("#bellBadge")) return;
+  const due = EV ? EV.upcoming.filter((e) => !e.acked && e.days <= 3) : [];
+  const n = due.length + unseenActivity;
+  $("#bellBadge").hidden = !n;
+  $("#bellBadge").textContent = n;
+  $("#bellBadge").classList.toggle("hot", due.length > 0);
+  if (!$("#bellPanel").hidden) renderBell();
+}
+
+function renderBell() {
+  const due = EV ? EV.upcoming.filter((e) => !e.acked && e.days <= 3) : [];
+  const t = (d) => d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  $("#bellPanel").innerHTML = `
+    <h3>🔔 Notifications<small>${due.length + ACTIVITY.length || "all clear"}</small></h3>
+    <h4>Needs your attention</h4>
+    ${due.map((e) => eventRow(e)).join("") || `<div class="ev-empty">No events in the next 3 days that you haven't seen.</div>`}
+    <h4>Recent activity</h4>
+    ${ACTIVITY.map((a) => `<div class="act-row"><time>${t(a.at)}</time><span>${esc(a.msg)}</span></div>`).join("") || `<div class="ev-empty">Plug-ins, saved clips and other activity show up here.</div>`}`;
+}
+
+function setupHeaderPanels() {
+  const pairs = [["#calBtn", "#calPanel", renderCalendar], ["#bellBtn", "#bellPanel", () => { unseenActivity = 0; updateBell(); renderBell(); }]];
+  const closeAll = (except) => {
+    for (const [b, p] of pairs) if (p !== except) { $(p).hidden = true; $(b).setAttribute("aria-expanded", "false"); }
+    if (except !== "#dlgMenu") $("#dlgMenu").hidden = true;
+  };
+  for (const [b, p, render] of pairs) {
+    $(b).onclick = (e) => {
+      e.stopPropagation();
+      const open = $(p).hidden;
+      closeAll(p);
+      $(p).hidden = !open;
+      $(b).setAttribute("aria-expanded", String(open));
+      if (open) render();
+    };
+    $(p).onclick = async (e) => {
+      e.stopPropagation();
+      const ack = e.target.closest("[data-ack]");
+      const del = e.target.closest("[data-del]");
+      if (ack) {
+        await api("/api/events/ack", { id: ack.dataset.ack, date: ack.dataset.date, undo: !!ack.dataset.undo }).catch(() => {});
+        await loadEvents();
+        render();
+      } else if (del && confirmDelete(del)) {
+        await api("/api/events/delete", { id: del.dataset.del }).catch(() => {});
+        await loadEvents();
+        render();
+      }
+    };
+  }
+  document.addEventListener("click", () => closeAll(null));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(null); });
+  loadEvents();
+  setInterval(loadEvents, 60000);
+}
+
+function confirmDelete(btn) {
+  // two-step delete without a browser dialog: first click arms, second click deletes
+  if (btn.dataset.armed) return true;
+  btn.dataset.armed = "1";
+  btn.textContent = "Delete?";
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = "✕"; } }, 2500);
+  return false;
+}
+
 /* ---------- Claude / search bar ---------- */
 function searchIndex() {
   const rows = [];
@@ -574,6 +854,8 @@ async function boot() {
   setInterval(refreshHealth, 1500); // fast enough for lock keys and plug-in alerts
   renderSidebar();
   setupAsk();
+  setupDialogMenu();
+  setupHeaderPanels();
   const last = store.get("mydesk.view", null);
   if (last?.tool && STATE.tools.some((t) => t.id === last.tool)) openTool(last.tool);
   else if (last?.section && sectionById(last.section)) openSection(last.section, !!last.builtin);

@@ -50,6 +50,31 @@ class SmokeTest(unittest.TestCase):
         status, body = self.get("/api/health")
         self.assertIn("cpu", json.loads(body))
 
+    def test_mycheats_viewer_and_dialogs(self):
+        status, body = self.get("/api/tool-items?tool=mycheats")
+        names = {x["name"] for x in json.loads(body)}
+        self.assertTrue({"git", "windows-cmd", "powershell"} <= names)
+        status, body = self.get(server.page_url("mycheats", "git").split("?")[0] + "?t=" + server.TOKEN, token=False)
+        self.assertIn(b"git switch -c", body)
+        req = urllib.request.Request(self.url + "api/dialogs/open", method="POST",
+                                     data=json.dumps({"tool": "mycheats", "name": "git"}).encode(),
+                                     headers={"X-MyDesk-Token": server.TOKEN, "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            opened = json.loads(r.read())
+        self.assertTrue(opened["inline"])  # no desktop window in tests -> in-page dialog
+        status, body = self.get("/api/dialogs")
+        self.assertEqual(len(json.loads(body)), 1)
+        req = urllib.request.Request(self.url + "api/dialogs/close", method="POST", data=b'{"all": true}',
+                                     headers={"X-MyDesk-Token": server.TOKEN, "Content-Type": "application/json"})
+        urllib.request.urlopen(req, timeout=10).read()
+        status, body = self.get("/api/dialogs")
+        self.assertEqual(json.loads(body), [])
+
+    def test_bad_page_name_rejected(self):
+        with self.assertRaises(urllib.error.HTTPError) as ctx:
+            self.get("/page/mycheats/..%2F..%2Fconfig")
+        self.assertEqual(ctx.exception.code, 404)
+
     def test_requires_token(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.get("/api/state", token=False)

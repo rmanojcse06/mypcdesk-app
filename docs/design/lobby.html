@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MyDesk Lobby Design</title>
-<!-- Design mockup of the three-panel lobby. Open with #lobby, #health, #claude, #tokens or #max. Sample data only. -->
+<!-- Design mockup of the three-panel lobby. Open with #lobby, #health, #claude, #tokens, #max or #tips-edit. Sample data only. -->
 <style>
 :root {
   --paper: #fbf6ec; --card: #fff; --ink: #1d2233; --ink-2: #565d73; --ink-3: #8a90a3; --line: #e7e1d4;
@@ -17,7 +17,7 @@ body {
   margin: 0; height: 100vh; overflow: hidden; color: var(--ink); font: 14px/1.45 var(--sans);
   background: var(--paper) radial-gradient(rgba(29,34,51,.07) 1px, transparent 1px) 0 0 / 18px 18px;
 }
-.app { height: 100vh; display: grid; grid-template-rows: auto 1fr; gap: 14px; padding: 16px 22px 18px; }
+.app { height: 100vh; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 16px 22px 18px; }
 
 /* header */
 .top { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding-bottom: 10px; border-bottom: 2.5px solid var(--ink); }
@@ -53,6 +53,13 @@ body {
 .panel.collapsed .ph { flex: none; background: none; padding-right: 8px; }
 .panel.collapsed .acts { order: 9; margin-left: 0; padding-right: 10px; align-self: center; }
 .panel.hidden { display: none; }
+/* expanded / maximized panels scroll inside themselves */
+.panel.scroll .pb { overflow-y: auto; scrollbar-gutter: stable; }
+.panel.scroll .msgs, .panel.scroll .side { overflow-y: auto; scrollbar-gutter: stable; padding-right: 6px; }
+.pb::-webkit-scrollbar, .msgs::-webkit-scrollbar, .side::-webkit-scrollbar { width: 12px; }
+.pb::-webkit-scrollbar-track, .msgs::-webkit-scrollbar-track, .side::-webkit-scrollbar-track { background: #f3efe5; border-radius: 10px; }
+.pb::-webkit-scrollbar-thumb, .msgs::-webkit-scrollbar-thumb, .side::-webkit-scrollbar-thumb { background: var(--pc, #8a90a3); border: 2px solid #f3efe5; border-radius: 10px; }
+.scroll-hint { position: absolute; right: 34px; bottom: 12px; z-index: 3; font: 700 11.5px var(--sans); color: #fff; background: var(--ink); padding: 4px 10px; border-radius: 99px; box-shadow: 2px 2px 0 rgba(0,0,0,.15); }
 
 /* health */
 .gauges { display: grid; grid-template-columns: repeat(3, 1fr) 1.3fr; gap: 16px; align-items: center; }
@@ -80,7 +87,7 @@ body {
 .keys { margin-left: auto; display: flex; gap: 7px; }
 
 /* tools */
-.toolgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; height: 100%; }
+.toolgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .sec { border: 2px solid var(--ink); border-radius: 12px; padding: 10px 12px; background: color-mix(in srgb, var(--sc) 7%, #fff); }
 .sec h3 { margin: 0 0 7px; display: flex; align-items: center; gap: 8px; font: 700 14.5px var(--serif); }
 .sec h3 i { width: 11px; height: 11px; border-radius: 4px; background: var(--sc); border: 1.5px solid var(--ink); }
@@ -181,6 +188,44 @@ body {
 .callout { position: absolute; z-index: 9; background: var(--ink); color: #fff; font: 600 12px var(--sans); padding: 5px 10px; border-radius: 8px; white-space: nowrap; }
 .callout::after { content: ""; position: absolute; width: 8px; height: 8px; background: var(--ink); transform: rotate(45deg); }
 .callout.down::after { left: 18px; bottom: -4px; } .callout.up::after { left: 18px; top: -4px; } .callout.right::after { right: -4px; top: 9px; }
+
+/* tips strip (vertical marquee) */
+.tips { position: relative; display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 8px 0 14px;
+  background: #fffbe6; border: 2px solid var(--ink); border-radius: 12px; box-shadow: 3px 3px 0 var(--ink); }
+.tips .lbl { display: flex; align-items: center; gap: 7px; font: 700 14px var(--serif); white-space: nowrap; padding-right: 12px; border-right: 2px dashed #e6d9a8; }
+.tips .win { flex: 1; height: 42px; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent); }
+.tips .track { transition: transform .7s cubic-bezier(.3,.7,.2,1); }
+.tip { height: 42px; display: flex; align-items: center; gap: 10px; font-size: 14px; white-space: nowrap; }
+.tip .tag { font: 700 10.5px var(--sans); padding: 2px 8px; border-radius: 99px; border: 1.5px solid var(--ink); background: var(--tc); color: #fff; }
+.tip .pin { color: var(--amber); }
+.tips .pos { font: 600 11.5px var(--sans); color: var(--ink-3); white-space: nowrap; }
+.tips .ib { width: 28px; height: 28px; }
+.tips .ib svg { width: 13px; height: 13px; }
+.tip-edit { position: absolute; left: 140px; top: 52px; z-index: 8; width: 720px; padding: 14px 16px; background: #fff;
+  border: 2.5px solid var(--ink); border-radius: 14px; box-shadow: 5px 5px 0 var(--ink); }
+.tip-edit h4 { margin: 0 0 8px; font: 700 16px var(--serif); display: flex; align-items: center; }
+.tip-edit h4 small { margin-left: auto; font: 500 12px var(--sans); color: var(--ink-3); }
+.te-row { display: grid; grid-template-columns: 18px 1fr 110px 28px 28px; gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid var(--line); }
+.te-row .grip { color: var(--ink-3); cursor: grab; text-align: center; }
+.te-row .txt { padding: 6px 10px; border: 1.75px solid var(--ink); border-radius: 8px; background: #fffdf8; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.te-row .txt.editing { outline: 3px solid color-mix(in srgb, var(--amber) 40%, transparent); }
+.te-row select, .te-row .sel, .te-add .sel { padding: 5px 8px; border: 1.75px solid var(--ink); border-radius: 8px; font: 600 12px var(--sans); background: #fff; }
+.te-row .ic2 { text-align: center; font-size: 15px; color: var(--ink-3); }
+.te-row .ic2 { opacity: .28; filter: grayscale(1); }
+.te-row .ic2.on { opacity: 1; filter: none; }
+.te-add { display: grid; grid-template-columns: 1fr 110px auto; gap: 8px; margin-top: 10px; }
+.te-add .txt { padding: 8px 10px; border: 2px dashed var(--ink-3); border-radius: 8px; color: var(--ink-3); font-size: 13.5px; }
+.te-foot { display: flex; gap: 18px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 2px dashed var(--line); font-size: 12.5px; color: var(--ink-2); }
+.te-foot b { color: var(--ink); }
+.te-foot .btn { margin-left: auto; padding: 7px 16px; background: var(--amber); }
+/* header buttons (match the app) */
+.hdr-btns { display: flex; gap: 10px; align-items: center; }
+.hb { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 12px; background: #fff; box-shadow: 2px 2px 0 var(--ink); }
+.hb svg { width: 20px; height: 20px; fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.hb .nb { position: absolute; top: -8px; right: -8px; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid var(--ink); border-radius: 99px; background: var(--red); color: #fff; font: 800 11px/16px var(--sans); text-align: center; }
+.hb .nb.amber { background: var(--amber); }
+.dlgc { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border: 2px solid var(--violet); border-radius: 99px; background: color-mix(in srgb, var(--violet) 14%, #fff); box-shadow: 2px 2px 0 var(--ink); font: 700 14px var(--sans); color: var(--violet); }
+.dlgc small { color: var(--ink-3); font-size: 11.5px; }
 .sample { position: fixed; right: 26px; bottom: 6px; font: 600 10.5px var(--sans); color: var(--ink-3); }
 </style>
 </head>
@@ -189,8 +234,19 @@ body {
   <header class="top">
     <div class="hello"><span>Hello</span><b>Manoj</b>,</div>
     <h1 class="brand"><span style="color:var(--blue)">M</span><span style="color:var(--pink)">y</span><span style="color:var(--green)">D</span><span style="color:var(--amber)">e</span><span style="color:var(--violet)">s</span><span style="color:var(--red)">k</span></h1>
-    <div class="who"><div><div class="t">7:03 pm IST</div><div class="d">Tuesday, 20th October 2026</div></div><div class="avatar">M</div></div>
+    <div class="who"><div class="hdr-btns">
+        <span class="dlgc" title="Dialog windows open">🗗 2 <small>dialogs</small></span>
+        <span class="hb" title="Calendar"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="nb">3</span></span>
+        <span class="hb" title="Notifications"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="nb amber">2</span></span>
+      </div><div><div class="t">7:03 pm IST</div><div class="d">Tuesday, 20th October 2026</div></div><div class="avatar">M</div></div>
   </header>
+  <section class="tips" id="tips">
+    <span class="lbl">💡 Tips</span>
+    <div class="win"><div class="track" id="tipTrack"></div></div>
+    <span class="pos" id="tipPos">1 / 6</span>
+    <button class="ib" title="Pause">❚❚</button>
+    <button class="ib" id="tipEditBtn" title="Edit tips"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M14 6l4 4"/></svg></button>
+  </section>
   <main class="panels" id="panels"></main>
 </div>
 <div class="sample">Design mockup · sample data</div>
@@ -254,6 +310,16 @@ function healthDetail() {
     </div>
     <div class="card"><h4>Storage trend <small>C: used, last 30 days</small></h4>
       ${sparkline([38,38,39,39,40,40,41,41,42,42,42,43,44,44,45,45,45,46,46,47,47,47,48,48,49,49,49,50,50,50], "var(--amber)")}
+    </div>
+    <div class="card"><h4>CPU per core <small>right now</small></h4>
+      <div class="cores">${[18, 9, 31, 6, 12, 4, 22, 8].map((v) => `<div><i style="height:${v}%"></i></div>`).join("")}</div>
+    </div>
+    <div class="card"><h4>Busiest apps <small>CPU · memory</small></h4>
+      <table class="procs"><tr><th>App</th><th class="n">CPU %</th><th class="n">Memory</th></tr>
+        <tr><td>chrome.exe</td><td class="n">6.2</td><td class="n">1,840 MB</td></tr>
+        <tr><td>Code.exe</td><td class="n">3.1</td><td class="n">910 MB</td></tr>
+        <tr><td>pythonw.exe (MyDesk)</td><td class="n">0.8</td><td class="n">96 MB</td></tr>
+        <tr><td>Teams.exe</td><td class="n">0.7</td><td class="n">620 MB</td></tr></table>
     </div>
   </div>`;
 }
@@ -326,6 +392,9 @@ function claudeExpanded() {
   return `<div class="cl-grid">
     <div class="chat">
       <div class="msgs">
+        <div class="m u">Which of my GitHub repos had activity this week?</div>
+        <div class="m a">Three: <b>MyDesk</b> (2 commits), <b>spring-demo</b> (1 PR merged) and <b>ccna-notes</b> (1 commit).
+          <span class="tk">1,620 in · 210 out · $0.01 · claude-haiku-5-5</span></div>
         <div class="m u">Summarise what TechBite found today on GenAI and Spring.</div>
         <div class="m a">Four new items since this morning:
           <ul><li><b>GenAI:</b> two new open-weight model releases and an agents benchmark update</li>
@@ -378,14 +447,14 @@ const toolActs = (expanded) => expanded ? ib("restore", "Restore") : ib("max", "
 
 let html = "", rows = "";
 let callouts = "";
-if (STATE === "lobby") {
+if (STATE === "lobby" || STATE === "tips-edit") {
   rows = "auto 1fr auto";
   html = panel("", head(HC, "H", "My Health", "updated 7:03 pm · click any gauge or chip for details", healthActs(false)), healthBody())
-       + panel("", head(TC, "T", "Tools", "8 sections · 4 ready · ★ favourites", toolActs(false)), toolsBody())
+       + panel("scroll", head(TC, "T", "Tools", "8 sections · 4 ready · ★ favourites · scroll for more", toolActs(false)), toolsBody())
        + panel("", head(CC, "C", "Claude", "token usage updated 7:02 pm · click a number for details", claudeActs(false)), claudeBody());
 } else if (STATE === "health") {
   rows = "1fr auto auto";
-  html = panel("", head(HC, "H", "My Health", "Storage selected · updated 7:03 pm", healthActs(true, "restore")), healthBody("disk") + healthDetail())
+  html = panel("scroll", head(HC, "H", "My Health", "Storage selected · updated 7:03 pm", healthActs(true, "restore")), healthBody("disk") + healthDetail() + `<span class="scroll-hint">Scroll for CPU cores and busiest apps ↓</span>`)
        + panel("collapsed", head(TC, "T", "Tools", "", toolActs(false)), toolsCollapsed())
        + panel("collapsed", head(CC, "C", "Claude", "", ""), claudeCollapsed());
   callouts = `<div class="callout" style="left:370px;top:96px">Clicked Storage → Health expands; Tools and Claude shrink to strips</div>`;
@@ -393,15 +462,16 @@ if (STATE === "lobby") {
   rows = "auto auto 1fr";
   html = panel("collapsed", head(HC, "H", "My Health", "", healthActs(false)), healthCollapsed())
        + panel("collapsed", head(TC, "T", "Tools", "", toolActs(false)), toolsCollapsed())
-       + panel("", head(CC, "C", "Claude", "token usage updated 7:02 pm", claudeActs(true, STATE === "claude" ? "refresh" : "")), claudeExpanded());
+       + panel("scroll", head(CC, "C", "Claude", "token usage updated 7:02 pm", claudeActs(true, STATE === "claude" ? "refresh" : "")), claudeExpanded());
   if (STATE === "tokens") callouts = tokenPopover();
 } else if (STATE === "max") {
   rows = "1fr";
-  html = panel("", head(CC, "C", "Claude", "maximized · press Restore or Esc to return to the lobby", claudeActs(true, "restore")), claudeExpanded());
+  html = panel("scroll", head(CC, "C", "Claude", "maximized · press Restore or Esc to return to the lobby", claudeActs(true, "restore")), claudeExpanded());
 }
 P.style.gridTemplateRows = rows;
 P.innerHTML = html;
 if (callouts) document.body.insertAdjacentHTML("beforeend", callouts);
+document.querySelectorAll(".msgs").forEach((m) => { m.scrollTop = m.scrollHeight; });
 if (STATE === "tokens") {
   // highlight the clicked "Today" tile
   const tiles = document.querySelectorAll(".side .stat");
@@ -414,6 +484,39 @@ if (STATE === "tokens") {
   pop.style.left = `${left}px`;
   pop.style.top = `${r.bottom + 12}px`;
   pop.style.setProperty("--ax", `${r.left + r.width / 2 - left - 7}px`);
+}
+
+/* ---------- tips strip ---------- */
+const TIPS = [
+  ["Family", "var(--pink)", "Aarav's birthday on Fri 23 Oct — order the cake by Wednesday", true],
+  ["CCNA", "var(--blue)", "OSPF stuck in EXSTART? Check the MTU matches on both ends"],
+  ["Spring", "var(--green)", "Spring Boot 3 needs Java 17 or newer — check JAVA_HOME before upgrading"],
+  ["Git", "var(--red)", "Undo the last commit but keep the changes: git reset --soft HEAD~1"],
+  ["Home", "var(--amber)", "Electricity bill due tomorrow — pay before 6 pm to avoid the late fee"],
+  ["GenAI", "var(--violet)", "Prompt caching cuts repeat-input cost — use it for long system prompts"],
+];
+const tipRow = ([tag, c, txt, pin]) => `<div class="tip"><span class="tag" style="--tc:${c}">${tag}</span>${pin ? '<span class="pin">📌</span>' : ""}<span>${txt}</span></div>`;
+document.getElementById("tipTrack").innerHTML = TIPS.map(tipRow).join("") + tipRow(TIPS[0]);
+let tipI = 0;
+if (!["tips-edit"].includes(STATE) && !location.search.includes("static")) {
+  setInterval(() => {
+    const tr = document.getElementById("tipTrack");
+    tipI++;
+    tr.style.transition = "";
+    tr.style.transform = `translateY(-${tipI * 42}px)`;
+    document.getElementById("tipPos").textContent = `${(tipI % TIPS.length) + 1} / ${TIPS.length}`;
+    if (tipI === TIPS.length) setTimeout(() => { tr.style.transition = "none"; tr.style.transform = "translateY(0)"; tipI = 0; }, 750);
+  }, 5000);
+}
+if (STATE === "tips-edit") {
+  const rows = TIPS.map(([tag, c, txt, pin], i) => `<div class="te-row"><span class="grip">⋮⋮</span><div class="txt ${i === 1 ? "editing" : ""}">${txt}</div>
+    <span class="sel" style="border-color:${c}">● ${tag}</span><span class="ic2 ${pin ? "on" : ""}" title="Pin to top">📌</span><span class="ic2" title="Delete">🗑</span></div>`).join("");
+  document.body.insertAdjacentHTML("beforeend", `<div class="tip-edit">
+    <h4>✏️ Edit tips<small>drag ⋮⋮ to reorder · 📌 pinned tips show first</small></h4>${rows}
+    <div class="te-add"><div class="txt">Type a new tip… e.g. "Seminar Fri 30 Oct, Hall B 10 am"</div><span class="sel">● Work</span><span class="btn" style="padding:7px 14px;background:var(--amber)">Add tip</span></div>
+    <div class="te-foot"><span>Scroll every <b>5 s ▾</b></span><span>☑ Pause when the mouse is over it</span><span>☑ Add upcoming events automatically</span><span class="btn">Done</span></div></div>`);
+  document.getElementById("tipEditBtn").classList.add("hint");
+  document.getElementById("tipEditBtn").style.setProperty("--pc", "var(--amber)");
 }
 </script>
 </body>

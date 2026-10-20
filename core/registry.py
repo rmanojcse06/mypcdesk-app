@@ -62,5 +62,5 @@ def build_args(tool: dict, values: dict) -> list[str]:
 
 
 def public_view(tool: dict) -> dict:
-    keys = ("id", "name", "section", "description", "icon", "inputs", "outputs", "accent", "run_label")
+    keys = ("id", "name", "section", "description", "icon", "inputs", "outputs", "accent", "run_label", "kind", "items_label")
     return {k: tool[k] for k in keys if k in tool}
