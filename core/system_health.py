@@ -114,3 +114,46 @@ def os_details() -> dict:
         "cpu_mhz": round(freq.current) if freq else None,
         "per_cpu": [round(x) for x in psutil.cpu_percent(interval=None, percpu=True)],
     }
+
+
+def ports() -> dict:
+    """Which app holds which port: listening TCP ports and bound UDP ports, plus live connection counts."""
+    try:
+        conns = psutil.net_connections(kind="inet")
+    except (psutil.AccessDenied, PermissionError):
+        return {"error": "Not allowed to read connections (try running as administrator).", "ports": []}
+    names: dict[int, str] = {}
+
+    def name_of(pid):
+        if pid is None:
+            return "System"
+        if pid not in names:
+            try:
+                names[pid] = psutil.Process(pid).name()
+            except psutil.Error:
+                names[pid] = "?"
+        return names[pid]
+
+    established: dict[int | None, int] = {}
+    rows: dict[tuple, dict] = {}
+    for c in conns:
+        if c.status == psutil.CONN_ESTABLISHED:
+            established[c.pid] = established.get(c.pid, 0) + 1
+        is_tcp_listen = c.type == 1 and c.status == psutil.CONN_LISTEN   # SOCK_STREAM
+        is_udp = c.type == 2 and c.laddr                                  # SOCK_DGRAM
+        if not (is_tcp_listen or is_udp) or not c.laddr:
+            continue
+        proto = "TCP" if c.type == 1 else "UDP"
+        key = (c.laddr.port, proto, c.pid)
+        row = rows.setdefault(key, {"port": c.laddr.port, "proto": proto, "pid": c.pid, "app": name_of(c.pid),
+                                    "addresses": [], "scope": "this PC only"})
+        ip = c.laddr.ip
+        if ip not in row["addresses"]:
+            row["addresses"].append(ip)
+        if ip not in ("127.0.0.1", "::1") and not ip.startswith("127."):
+            row["scope"] = "network"
+    out = sorted(rows.values(), key=lambda r: (r["port"], r["proto"]))
+    for r in out:
+        r["connections"] = established.get(r["pid"], 0)
+    return {"ports": out, "listening": sum(1 for r in out if r["proto"] == "TCP"),
+            "network_exposed": sum(1 for r in out if r["scope"] == "network" and r["proto"] == "TCP")}

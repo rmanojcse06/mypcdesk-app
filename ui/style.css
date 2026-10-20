@@ -559,3 +559,9 @@ table.procs { width: 100%; border-collapse: collapse; font-size: 13px; }
 .act-row { display: flex; gap: 9px; align-items: baseline; padding: 6px 2px; border-top: 1px solid var(--line); font-size: 13px; }
 .act-row:first-of-type { border-top: none; }
 .act-row time { color: var(--ink-3); font-size: 11.5px; min-width: 44px; font-variant-numeric: tabular-nums; }
+
+/* ports panel */
+.port-q { margin-left: auto; padding: 6px 10px; border: 1.75px solid var(--ink); border-radius: 8px; font: 400 13px var(--sans); background: #fffdf8; width: 220px; }
+.ports small { color: var(--ink-3); font-size: 11.5px; }
+.scope { display: inline-block; padding: 1px 8px; border-radius: 99px; border: 1.5px solid var(--line); font: 600 11.5px var(--sans); }
+.scope.net { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, #fff); }

@@ -4,7 +4,7 @@
       "id": "os_monitor",
       "name": "OS Monitor",
       "color": "#2f6fed",
-      "blurb": "CPU, memory, disks, network and the busiest apps right now.",
+      "blurb": "CPU, memory, disks, network, the busiest apps and which app holds which port.",
       "builtin": "os_monitor",
       "planned": [
         "Startup apps",

@@ -154,6 +154,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(system_health.health())
             if path == "/api/os":
                 return self._json(system_health.os_details())
+            if path == "/api/ports":
+                return self._json(system_health.ports())
             if path == "/api/job":
                 job = jobs.get_job(q.get("id", [""])[0])
                 return self._json(job or {"error": "unknown job"}, 200 if job else 404)

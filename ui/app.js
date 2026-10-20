@@ -311,7 +311,11 @@ function renderOsMonitor(s) {
       <div class="panel"><h3>Disks</h3><div id="disks"></div></div>
     </div>
     <div class="panel"><h3>Busiest apps right now</h3>
-      <table class="procs"><thead><tr><th>App</th><th class="num">PID</th><th class="num">CPU %</th><th class="num">Memory</th></tr></thead><tbody id="procs"></tbody></table></div>`;
+      <table class="procs"><thead><tr><th>App</th><th class="num">PID</th><th class="num">CPU %</th><th class="num">Memory</th></tr></thead><tbody id="procs"></tbody></table></div>
+    <div class="panel"><h3>Ports in use <span class="muted" id="portSum"></span>
+        <input id="portQ" class="port-q" type="search" placeholder="Filter by port or app…" aria-label="Filter ports"></h3>
+      <table class="procs ports"><thead><tr><th class="num">Port</th><th>Type</th><th>Reachable from</th><th>App</th><th class="num">PID</th><th class="num">Live connections</th><th></th></tr></thead><tbody id="ports"></tbody></table>
+      <div class="hint">Read-only. To end an app, copy its command and run it in a terminal (Windows asks for admin for some apps).</div></div>`;
   const tick = async () => {
     if (!$("#procs")) return clearInterval(osTimer);
     try {
@@ -330,8 +334,31 @@ function renderOsMonitor(s) {
         || `<tr><td colspan="4">Collecting… first numbers arrive in a few seconds.</td></tr>`;
     } catch { /* retry next tick */ }
   };
+  const portsTick = async () => {
+    if (!$("#ports")) return;
+    try {
+      const r = await api("/api/ports");
+      const q = ($("#portQ").value || "").trim().toLowerCase();
+      const rows = (r.ports || []).filter((x) => !q || String(x.port).includes(q) || x.app.toLowerCase().includes(q));
+      $("#portSum").textContent = r.error ? r.error : `${r.listening} listening · ${r.network_exposed} reachable from your network`;
+      const kill = (x) => (navigator.platform || "").startsWith("Win") ? `taskkill /pid ${x.pid} /f` : `kill ${x.pid}`;
+      $("#ports").innerHTML = rows.map((x) => `<tr>
+        <td class="num"><b>${x.port}</b></td><td>${x.proto}</td>
+        <td><span class="scope ${x.scope === "network" ? "net" : ""}">${x.scope === "network" ? "🌐 network" : "🔒 this PC"}</span> <small>${esc(x.addresses.join(", "))}</small></td>
+        <td>${esc(x.app)}</td><td class="num">${x.pid ?? "–"}</td><td class="num">${x.connections}</td>
+        <td>${x.pid ? `<button class="mini-btn" data-copy="${esc(kill(x))}" title="${esc(kill(x))}">Copy end command</button>` : ""}</td></tr>`).join("")
+        || `<tr><td colspan="7">No ports match.</td></tr>`;
+    } catch { /* retry next tick */ }
+  };
+  $("#portQ").addEventListener("input", portsTick);
+  $("#ports").addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-copy]");
+    if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy); toast(`Copied: ${b.dataset.copy}`, false); } catch { toast(b.dataset.copy, false); }
+  });
   tick();
-  osTimer = setInterval(tick, 3000);
+  portsTick();
+  osTimer = setInterval(() => { tick(); portsTick(); }, 3000);
 }
 
 /* ---------- generic tool view ---------- */
