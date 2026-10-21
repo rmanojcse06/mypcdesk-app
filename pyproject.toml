@@ -45,7 +45,7 @@ mydesk = "mydesk.cli:main"
 mydesk-app = "mydesk.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/rmanojcse06/MyDesk"
+Homepage = "https://github.com/rmanojcse06/mypcdesk-app"
 
 [tool.setuptools.dynamic]
 version = { file = "mydesk/VERSION" }

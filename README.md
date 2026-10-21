@@ -4,6 +4,8 @@
 
 ![MyDesk home with the Junkyard menu open](docs/screenshots/home.png)
 
+**Docs:** [Install guide](docs/INSTALL.md) · [Architecture and diagrams](docs/ARCHITECTURE.md) · [Plan and roadmap](docs/PLAN.md) · [Changelog](CHANGELOG.md) · [Add a tool](CONTRIBUTING.md)
+
 - **Starts with Windows** (or macOS/Linux login) as its own window
 - **Live health strip:** CPU, memory, storage, last reboot and sign-in
 - **Eight sections** with hover menus that stay tidy however many tools you add (a filter box appears when a section has more than 8)
@@ -54,7 +56,7 @@ Rename sections, change colours or list planned tools in [`sections.json`](secti
 
 ## Install
 
-**Current version: 1.0.0-beta.2** — see [CHANGELOG.md](CHANGELOG.md). Pick whichever suits you; all three give the same app.
+**Current version: 1.0.0-beta.2** — see [CHANGELOG.md](CHANGELOG.md). Pick whichever suits you; all three give the same app. Step-by-step instructions, first-run checks, upgrade, uninstall and troubleshooting are in **[docs/INSTALL.md](docs/INSTALL.md)**.
 
 ### 1. Download an app (no Python needed)
 
@@ -70,7 +72,7 @@ From the repo's **Releases** page:
 ### 2. Install the `mydesk` command (Python 3.10–3.13)
 
 ```bash
-pipx install "mydesk[clip] @ https://github.com/rmanojcse06/MyDesk/releases/download/v1.0.0-beta.2/mydesk-1.0.0b2-py3-none-any.whl"
+pipx install "mydesk[clip] @ https://github.com/rmanojcse06/mypcdesk-app/releases/download/v1.0.0-beta.2/mydesk-1.0.0b2-py3-none-any.whl"
 mydesk autostart on        # start at sign-in (Windows, macOS and Linux)
 mydesk                     # open MyDesk
 ```
@@ -140,6 +142,8 @@ mydesk/tools/<id>/   one folder per tool: tool.json + script
 packaging/           PyInstaller recipe, Windows installer, Linux installer
 relay/               optional WhatsApp relay (Cloudflare Worker)
 ```
+
+Component, deployment, state and sequence diagrams are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Run the checks with `python -m unittest discover tests`. GitHub Actions runs them on Windows, macOS and Linux for every push.
 
