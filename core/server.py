@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from . import dialogs, events, heartbeat, inbox, jobs, keepawake, outputs, registry, system_health, whatsapp
-from .config import UI_DIR, load_config, load_sections
+from .config import UI_DIR, VERSION, load_config, load_sections
 
 TOKEN = secrets.token_urlsafe(24)
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
@@ -34,8 +34,8 @@ def set_show_window(fn) -> None:
 
 def _run_tool_page(tool: dict, args: list[str], timeout: int = 30) -> str:
     """Viewer tools answer --list-json / --html <name> on stdout."""
-    proc = subprocess.run([jobs._python_for_tools(), tool["script_path"], *args], capture_output=True,
-                          text=True, encoding="utf-8", errors="replace", timeout=timeout,
+    proc = subprocess.run([*jobs.script_command(tool["script_path"]), *args], capture_output=True,
+                          text=True, encoding="utf-8", errors="replace", timeout=timeout, env=jobs.tool_env(),
                           creationflags=jobs.CREATE_NO_WINDOW, cwd=tool["folder"])
     if proc.returncode != 0:
         raise RuntimeError((proc.stderr or proc.stdout or "tool failed").strip()[-400:])
@@ -58,6 +58,7 @@ def _state() -> dict:
         "tools": [registry.public_view(t) for t in registry.discover_tools()],
         "claude_enabled": bool(os.environ.get("ANTHROPIC_API_KEY")),
         "native_dialogs": dialogs.has_backend(),
+        "version": VERSION,
     }
 
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 import uuid
@@ -28,7 +29,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def ask(folder: Path, request: dict, timeout: float) -> dict:
-    inbox, outbox = folder / "data" / "inbox", folder / "data" / "outbox"
+    data = folder / "data"
+    if not (data / "status").exists() and os.environ.get("APPDATA"):   # installed (packaged) MyDesk
+        data = Path(os.environ["APPDATA"]) / "MyDesk" / "data"
+    inbox, outbox = data / "inbox", data / "outbox"
     inbox.mkdir(parents=True, exist_ok=True)
     req_id = request.setdefault("id", "r" + uuid.uuid4().hex[:10])
     request.setdefault("from", "claude")

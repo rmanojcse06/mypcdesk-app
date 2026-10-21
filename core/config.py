@@ -3,14 +3,23 @@ from __future__ import annotations
 
 import getpass
 import json
+import os
+import sys
 from pathlib import Path
 
+# Source checkout: everything lives next to the code.
+# Packaged app (PyInstaller): code is read-only in the install folder, while your
+# settings, data and own tools live in %APPDATA%\MyDesk so updates never touch them.
+FROZEN = bool(getattr(sys, "frozen", False))
 ROOT = Path(__file__).resolve().parent.parent
+APP_HOME = (Path(os.environ.get("APPDATA") or Path.home()) / "MyDesk") if FROZEN else ROOT
 UI_DIR = ROOT / "ui"
 TOOLS_DIR = ROOT / "tools"
-DATA_DIR = ROOT / "data"
-CONFIG_FILE = ROOT / "config.json"  # your settings; not committed (see config.example.json)
+USER_TOOLS_DIR = APP_HOME / "tools" if FROZEN else ROOT / "tools"
+DATA_DIR = Path(os.environ.get("MYDESK_DATA") or APP_HOME / "data")
+CONFIG_FILE = APP_HOME / "config.json"  # your settings; not committed (see config.example.json)
 SECTIONS_FILE = ROOT / "sections.json"
+VERSION = (ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").exists() else "dev"
 
 DEFAULT_CONFIG = {
     "name": "",

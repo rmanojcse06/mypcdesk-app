@@ -29,7 +29,7 @@ sys.path.insert(0, str(ROOT))
 
 from core import dialogs  # noqa: E402
 from core import server  # noqa: E402
-from core.config import DATA_DIR, load_config  # noqa: E402
+from core.config import DATA_DIR, VERSION, load_config  # noqa: E402
 
 INSTANCE_FILE = DATA_DIR / ".instance.json"
 ICON = ROOT / "ui" / "mydesk.png"
@@ -56,7 +56,8 @@ def write_instance_file(url: str) -> None:
 
 
 def title_for(n: int) -> str:
-    return f"MyDesk — {n} dialog{'s' if n != 1 else ''} open" if n else "MyDesk"
+    base = f"MyDesk {VERSION}"
+    return f"{base} — {n} dialog{'s' if n != 1 else ''} open" if n else base
 
 
 # ------------------------------------------------------------------ tray icon
@@ -144,7 +145,7 @@ def run_webview(url: str, cfg: dict, start_minimized: bool) -> bool:
         return False
 
     state = {"quitting": False}
-    main = webview.create_window("MyDesk", url, width=cfg["window"]["width"], height=cfg["window"]["height"],
+    main = webview.create_window(f"MyDesk {VERSION}", url, width=cfg["window"]["width"], height=cfg["window"]["height"],
                                  min_size=(1040, 700), minimized=start_minimized,
                                  background_color="#FBF6EC", text_select=True)
     close_to_tray = cfg.get("close_button", "minimize") == "tray"
@@ -242,8 +243,25 @@ def run_browser_mode(url: str, cfg: dict, start_minimized: bool) -> None:
 
 
 # ------------------------------------------------------------------ main
+def run_script_and_exit() -> None:
+    """Packaged app only: `MyDesk.exe --run-script tool.py args…` runs a tool with the bundled Python."""
+    import runpy
+
+    script = sys.argv[2]
+    sys.argv = [script, *sys.argv[3:]]
+    sys.path.insert(0, str(Path(script).resolve().parent))
+    try:
+        runpy.run_path(script, run_name="__main__")
+    except SystemExit as exc:
+        raise SystemExit(exc.code)
+    raise SystemExit(0)
+
+
 def main() -> None:
+    if len(sys.argv) >= 3 and sys.argv[1] == "--run-script":
+        run_script_and_exit()
     parser = argparse.ArgumentParser(description="MyDesk desktop app")
+    parser.add_argument("--version", action="version", version=f"MyDesk {VERSION}")
     parser.add_argument("--minimized", action="store_true")
     parser.add_argument("--browser", action="store_true")
     parser.add_argument("--serve", action="store_true")

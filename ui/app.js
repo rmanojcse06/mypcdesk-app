@@ -880,6 +880,10 @@ async function boot() {
   renderBrand();
   STATE = await api("/api/state");
   $("#userName").textContent = STATE.name;
+  if (STATE.version) {
+    const pre = /-(alpha|beta|rc)\.?(\d*)/i.exec(STATE.version);
+    $("#brand").insertAdjacentHTML("beforeend", `<sup class="ver" title="MyDesk ${esc(STATE.version)}">${pre ? `${esc(pre[1])} ${esc(pre[2] || "")}` : `v${esc(STATE.version)}`}</sup>`);
+  }
   $("#avatar").textContent = (STATE.name || "M")[0].toUpperCase();
   document.title = `MyDesk · ${STATE.name}`;
   tickClock();

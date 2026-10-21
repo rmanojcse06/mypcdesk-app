@@ -54,7 +54,13 @@ Rename sections, change colours or list planned tools in [`sections.json`](secti
 
 ## Install
 
-You need **Python 3.10–3.13** (Anaconda's Python works too).
+**Current version: 1.0.0-beta.1** — see [CHANGELOG.md](CHANGELOG.md).
+
+**Easiest (Windows):** download `MyDesk-Setup-<version>.exe` from the repo's **Releases** page and run it. No Python needed; it can start MyDesk at sign-in, and your settings stay in `%APPDATA%\MyDesk`. The beta isn't code-signed, so Windows may show "unknown publisher": choose **More info → Run anyway**. Prefer no installer? Use the `-portable.zip` from the same page.
+
+Releases are built automatically by `.github/workflows/release.yml` when a tag like `v1.0.0-beta.1` is pushed (PyInstaller + Inno Setup on a Windows runner).
+
+**From source** — you need **Python 3.10–3.13** (Anaconda's Python works too).
 
 **Windows:** download or clone this repo, then double-click **`install.bat`**. To install without starting at sign-in, run `install.bat -NoStartup`.
 

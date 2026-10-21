@@ -21,13 +21,12 @@ import threading
 import time
 import urllib.request
 
-from .config import DATA_DIR, load_config
+from .config import DATA_DIR, VERSION, load_config
 
 STATUS_DIR = DATA_DIR / "status"
 STATUS_FILE = STATUS_DIR / "status.json"
 INTERVAL = 30
 PING_EVERY = 300
-VERSION = "0.4"
 
 
 def snapshot() -> dict:

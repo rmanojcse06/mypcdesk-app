@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import html
 import json
+import os
 import re
 import sys
 import webbrowser
@@ -32,7 +33,8 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 BUILTIN = HERE / "sheets"
-USER = ROOT / "data" / "mycheats" / "sheets"
+DATA = Path(os.environ["MYDESK_DATA"]) if os.environ.get("MYDESK_DATA") else ROOT / "data"
+USER = DATA / "mycheats" / "sheets"
 NAME_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 ITEM_RE = re.compile(r"^[-*]\s+`(?P<cmd>.+?)`\s*(?::|—|-)\s*(?P<desc>.*)$")
 
@@ -206,7 +208,7 @@ def main() -> None:
         f.write_text(TEMPLATE.format(title=a.new.replace("-", " ").title()), encoding="utf-8")
         print(f"Created {f} — add your commands, then reopen MyCheats.")
     elif a.sheet:
-        out = ROOT / "data" / "mycheats" / f"{a.sheet}.html"
+        out = DATA / "mycheats" / f"{a.sheet}.html"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(render(a.sheet), encoding="utf-8")
         webbrowser.open(out.as_uri())

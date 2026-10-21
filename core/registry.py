@@ -9,12 +9,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .config import TOOLS_DIR
+from .config import TOOLS_DIR, USER_TOOLS_DIR
 
 
 def discover_tools() -> list[dict]:
-    tools = []
-    for manifest in sorted(TOOLS_DIR.glob("*/tool.json")):
+    tools, seen = [], set()
+    manifests = sorted(TOOLS_DIR.glob("*/tool.json"))
+    if USER_TOOLS_DIR != TOOLS_DIR and USER_TOOLS_DIR.exists():
+        manifests += sorted(USER_TOOLS_DIR.glob("*/tool.json"))
+    for manifest in manifests:
         folder = manifest.parent
         if folder.name.startswith("_"):
             continue
@@ -31,6 +34,9 @@ def discover_tools() -> list[dict]:
             print(f"[MyDesk] skipping {folder.name}: script {script.name} not found")
             continue
         meta["script_path"] = str(script)
+        if meta["id"] in seen:
+            continue
+        seen.add(meta["id"])
         tools.append(meta)
     return tools
 

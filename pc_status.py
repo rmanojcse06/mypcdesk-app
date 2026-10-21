@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -40,6 +41,8 @@ def main() -> None:
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     f = Path(a.folder) / "data" / "status" / "status.json"
+    if not f.exists() and os.environ.get("APPDATA"):   # installed (packaged) MyDesk keeps data in %APPDATA%
+        f = Path(os.environ["APPDATA"]) / "MyDesk" / "data" / "status" / "status.json"
     try:
         status = json.loads(f.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
