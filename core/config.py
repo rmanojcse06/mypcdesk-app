@@ -22,6 +22,10 @@ DEFAULT_CONFIG = {
     "keep_awake": "claude-running",  # stay awake on charger while Claude is open; "claude-busy" or "off"
     "heartbeat_url": "",          # optional healthchecks.io-style check-in URL; alerts your phone when the PC stops
     "claude_model": "claude-sonnet-5-5",
+    "whatsapp": {                 # see relay/README.md — official WhatsApp Cloud API via your own relay
+        "enabled": False, "relay_url": "", "relay_key": "",
+        "phone_number_id": "", "access_token": "", "graph_version": "v23.0", "poll_seconds": 5,
+    },
 }
 
 

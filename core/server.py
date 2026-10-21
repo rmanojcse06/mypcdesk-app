@@ -18,7 +18,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from . import dialogs, events, heartbeat, inbox, jobs, keepawake, outputs, registry, system_health
+from . import dialogs, events, heartbeat, inbox, jobs, keepawake, outputs, registry, system_health, whatsapp
 from .config import UI_DIR, load_config, load_sections
 
 TOKEN = secrets.token_urlsafe(24)
@@ -256,6 +256,7 @@ def start_server() -> str:
     heartbeat.start()   # data/status/status.json every 30 s ("is my computer on?")
     inbox.start()       # data/inbox -> data/outbox mailbox for phone-via-Claude requests
     keepawake.start(load_config().get("keep_awake", "claude-running"))  # no sleep while Claude works (charger only)
+    whatsapp.start()    # polls your WhatsApp relay (outgoing only) when enabled in config.json
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     httpd.daemon_threads = True
     threading.Thread(target=httpd.serve_forever, name="mydesk-http", daemon=True).start()

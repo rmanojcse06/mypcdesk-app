@@ -1,0 +1,10 @@
+name = "mydesk-relay"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+# Create the database once with:  npx wrangler d1 create mydesk-relay
+# then paste the database_id it prints below.
+[[d1_databases]]
+binding = "DB"
+database_name = "mydesk-relay"
+database_id = "PASTE-DATABASE-ID-HERE"

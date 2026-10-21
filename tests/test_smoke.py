@@ -107,6 +107,20 @@ class SmokeTest(unittest.TestCase):
         self.assertTrue(decide("off", True, False, False, 0, now, hold_alive=True)[0])     # wait for program
         self.assertFalse(decide("off", False, False, False, 0, now, hold_until=now + 60)[0])  # timer, but battery
 
+    def test_whatsapp_commands(self):
+        from core.whatsapp import parse, reply_text
+        self.assertEqual(parse("Status")["action"], "status")
+        self.assertEqual(parse("awake 2h"), {"action": "keep_awake", "minutes": 120.0})
+        self.assertEqual(parse("awake 90m"), {"action": "keep_awake", "minutes": 90.0})
+        self.assertEqual(parse("awake"), {"action": "keep_awake", "minutes": 60.0})
+        self.assertEqual(parse("awake until python")["until_exit"], "python")
+        self.assertTrue(parse("sleep ok")["release"])
+        self.assertEqual(parse("clip https://youtu.be/abc")["values"]["url"], "https://youtu.be/abc")
+        self.assertEqual(parse("say Dinner at 8")["message"], "Dinner at 8")
+        self.assertEqual(parse("format c:")["action"], "help")            # unknown -> help, never a command
+        self.assertIn("didn't understand", reply_text(parse("rm -rf /"), None))
+        self.assertIn("battery", reply_text({"action": "keep_awake", "minutes": 60}, {"on_ac": False}))
+
     def test_requires_token(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.get("/api/state", token=False)
