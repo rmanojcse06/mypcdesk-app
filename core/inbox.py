@@ -7,7 +7,7 @@ the answer to data/outbox/<id>.json. Nothing listens on a port; only someone who
 can already write files on this computer can send a request.
 
 Request:  {"id": "a1b2", "action": "run_tool", "tool": "mycheats", "values": {...}, "wait": 60}
-Actions:  ping · status · list_tools · run_tool · job · events · ack_event · add_event · notify · show
+Actions:  ping · status · list_tools · run_tool · job · events · ack_event · add_event · notify · show · keep_awake
           (no shell commands, no arbitrary scripts — only tools registered in tools/*/tool.json)
 """
 from __future__ import annotations
@@ -95,6 +95,19 @@ def handle(req: dict) -> dict:
     if action == "notify":
         notify(str(req.get("message", "")) or "Hello from your phone")
         return {"ok": True}
+    if action == "keep_awake":
+        from . import keepawake
+        if req.get("release"):
+            keepawake.release()
+            notify("Phone (via Claude): stay-awake hold released")
+        elif req.get("until_exit"):
+            name = keepawake.hold_until_exit(str(req["until_exit"]))
+            notify(f"Phone (via Claude): staying awake until {name} finishes (on charger)")
+        else:
+            minutes = min(max(float(req.get("minutes", 60)), 1), 24 * 60)
+            keepawake.hold_for(minutes)
+            notify(f"Phone (via Claude): staying awake for {int(minutes)} min (on charger)")
+        return keepawake.status()
     if action == "show":
         if _show_window:
             _show_window()

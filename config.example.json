@@ -9,5 +9,6 @@
     "height": 860
   },
   "claude_model": "claude-sonnet-5-5",
-  "heartbeat_url": ""
+  "heartbeat_url": "",
+  "keep_awake": "claude-running"
 }

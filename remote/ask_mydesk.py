@@ -12,6 +12,7 @@ No ports, no network API — just files in data/inbox and data/outbox.
     python remote/ask_mydesk.py notify --message "Leaving office, start backups"
     python remote/ask_mydesk.py add_event --title "Aarav's birthday" --date 2019-10-23 --kind birthday --yearly
     python remote/ask_mydesk.py show
+    python remote/ask_mydesk.py keep_awake --minutes 120        (or --until-exit python, or --release)
 Standard library only.
 """
 from __future__ import annotations
@@ -49,12 +50,13 @@ def ask(folder: Path, request: dict, timeout: float) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description="Ask the MyDesk running on this PC to do something.")
     ap.add_argument("action", choices=["ping", "status", "list_tools", "run_tool", "job", "events", "ack_event",
-                                       "add_event", "notify", "show"])
+                                       "add_event", "notify", "show", "keep_awake"])
     ap.add_argument("--tool"); ap.add_argument("--values", default="{}"); ap.add_argument("--job")
     ap.add_argument("--wait", type=float, default=60, help="seconds MyDesk waits for a tool to finish")
     ap.add_argument("--message"); ap.add_argument("--title"); ap.add_argument("--date"); ap.add_argument("--kind", default="other")
     ap.add_argument("--yearly", action="store_true"); ap.add_argument("--note", default="")
     ap.add_argument("--event-id"); ap.add_argument("--undo", action="store_true")
+    ap.add_argument("--minutes", type=float); ap.add_argument("--until-exit"); ap.add_argument("--release", action="store_true")
     ap.add_argument("--folder", default=str(ROOT), help="MyDesk folder")
     ap.add_argument("--timeout", type=float, default=None, help="seconds to wait for the answer")
     a = ap.parse_args()
@@ -68,6 +70,8 @@ def main() -> None:
         req.update(message=a.message or "")
     elif a.action == "add_event":
         req.update(title=a.title, date=a.date, kind=a.kind, yearly=a.yearly, note=a.note)
+    elif a.action == "keep_awake":
+        req.update(minutes=a.minutes or 60, until_exit=a.until_exit, release=a.release)
     elif a.action == "ack_event":
         req.update(event_id=a.event_id, date=a.date, undo=a.undo)
     timeout = a.timeout or (a.wait + 20 if a.action in ("run_tool", "job") else 20)

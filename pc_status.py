@@ -55,6 +55,9 @@ def main() -> None:
                   + (f" · battery {batt['percent']}%{' charging' if batt['plugged'] else ''}" if batt else ""))
             if status.get("drives"):
                 print("  drives: " + ", ".join(status["drives"]))
+            aw = status.get("awake") or {}
+            if aw:
+                print(f"  stay-awake: {'ON — ' if aw.get('holding') else 'off — '}{aw.get('reason')}")
             if status.get("upcoming_events"):
                 print("  coming up: " + "; ".join(status["upcoming_events"]))
     sys.exit(code)

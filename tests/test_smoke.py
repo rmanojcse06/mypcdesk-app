@@ -94,6 +94,19 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(pc_status.verdict(status, now=status["last_seen_epoch"] + 7200)[0], 2)
         self.assertEqual(pc_status.verdict(None)[0], 2)
 
+    def test_keep_awake_rules(self):
+        from core.keepawake import decide
+        now = 1_000_000
+        self.assertFalse(decide("claude-running", False, True, True, now, now)[0])          # battery: never
+        self.assertTrue(decide("claude-running", True, True, False, 0, now)[0])            # charger + Claude open
+        self.assertFalse(decide("claude-running", True, False, False, 0, now)[0])          # Claude closed
+        self.assertTrue(decide("claude-busy", True, True, True, now, now)[0])              # busy
+        self.assertTrue(decide("claude-busy", True, True, False, now - 300, now)[0])       # grace period
+        self.assertFalse(decide("claude-busy", True, True, False, now - 3600, now)[0])     # grace over
+        self.assertTrue(decide("off", True, False, False, 0, now, hold_until=now + 60)[0]) # timer
+        self.assertTrue(decide("off", True, False, False, 0, now, hold_alive=True)[0])     # wait for program
+        self.assertFalse(decide("off", False, False, False, 0, now, hold_until=now + 60)[0])  # timer, but battery
+
     def test_requires_token(self):
         with self.assertRaises(urllib.error.HTTPError) as ctx:
             self.get("/api/state", token=False)

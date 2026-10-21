@@ -18,7 +18,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, quote, unquote, urlparse
 
-from . import dialogs, events, heartbeat, inbox, jobs, outputs, registry, system_health
+from . import dialogs, events, heartbeat, inbox, jobs, keepawake, outputs, registry, system_health
 from .config import UI_DIR, load_config, load_sections
 
 TOKEN = secrets.token_urlsafe(24)
@@ -152,7 +152,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/state":
                 return self._json(_state())
             if path == "/api/health":
-                return self._json({**system_health.health(), "notices": inbox.take_notices()})
+                return self._json({**system_health.health(), "notices": inbox.take_notices(), "awake": keepawake.status()})
             if path == "/api/os":
                 return self._json(system_health.os_details())
             if path == "/api/ports":
@@ -255,6 +255,7 @@ def start_server() -> str:
     system_health.start_sampler()
     heartbeat.start()   # data/status/status.json every 30 s ("is my computer on?")
     inbox.start()       # data/inbox -> data/outbox mailbox for phone-via-Claude requests
+    keepawake.start(load_config().get("keep_awake", "claude-running"))  # no sleep while Claude works (charger only)
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     httpd.daemon_threads = True
     threading.Thread(target=httpd.serve_forever, name="mydesk-http", daemon=True).start()

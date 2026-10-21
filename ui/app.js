@@ -80,7 +80,7 @@ async function refreshHealth() {
     $("#lastSignIn").textContent = h.last_sign_in || "–";
     const up = h.uptime_hours;
     $("#uptime").textContent = up >= 24 ? `${Math.floor(up / 24)} d ${Math.round(up % 24)} h` : `${up} h`;
-    if (h.devices) renderDevices(h.devices);
+    if (h.devices) renderDevices(h.devices, h.awake);
     for (const n of h.notices || []) toast(`📱 ${n.msg}`);
   } catch { /* server busy; try next tick */ }
 }
@@ -89,7 +89,7 @@ async function refreshHealth() {
 const USB_ICONS = { storage: "💾", keyboard: "⌨️", mouse: "🖱️", phone: "📱", audio: "🎧", camera: "📷", bluetooth: "🔵", input: "🎮", other: "🔌" };
 let seen = null; // previous drives / USB devices, for plug-in toasts
 
-function renderDevices(d) {
+function renderDevices(d, awake) {
   const drives = d.drives || [];
   const usb = d.usb; // null = can't tell on this computer
   const now = { drives: new Set(drives.map((x) => x.mount)), usb: new Set((usb || []).map((x) => x.name)) };
@@ -132,6 +132,12 @@ function renderDevices(d) {
     const t = d.touch;
     chips.push(`<span class="ind ${t.present ? "on-green" : "off"}" title="${t.present ? `Touch screen${t.points ? `, ${t.points}-point` : ""}${t.pen ? ", pen supported" : ""}` : "No touch screen"}">
       <span class="ic">👆</span>Touch<small>${t.present ? (t.ready ? "on" : "not ready") : "none"}</small></span>`);
+  }
+  if (awake) {
+    const tip = `${awake.reason}. Mode: ${awake.mode}. Only on the charger — on battery the PC sleeps normally.`;
+    chips.push(awake.holding
+      ? `<span class="ind on-green" title="${esc(tip)}"><span class="ic">☕</span>Staying awake<small>${esc(awake.reason)}</small></span>`
+      : `<span class="ind off" title="${esc(tip)}"><span class="ic">🌙</span>Normal sleep<small>${awake.on_ac ? "" : "on battery"}</small></span>`);
   }
   $("#deviceChips").innerHTML = chips.join("");
 

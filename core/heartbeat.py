@@ -66,7 +66,14 @@ def snapshot() -> dict:
         "dialogs_open": dialogs.count(),
         "upcoming_events": upcoming,
         "interval_seconds": INTERVAL,
+        "awake": _awake(),
     }
+
+
+def _awake() -> dict:
+    from . import keepawake
+    s = keepawake.status()
+    return {"holding": s["holding"], "reason": s["reason"], "on_charger": s["on_ac"], "mode": s["mode"]}
 
 
 def write_status() -> None:
