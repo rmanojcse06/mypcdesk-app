@@ -64,7 +64,7 @@ Name=MyDesk
 Comment=Your personal desktop of tools
 Exec=\"$VPY\" \"$ROOT/mydesk.py\"
 Path=$ROOT
-Icon=$ROOT/ui/mydesk.png
+Icon=$ROOT/mydesk/ui/mydesk.png
 Terminal=false
 Categories=Utility;"
   echo "$DESKTOP" > "$APPS/mydesk.desktop"

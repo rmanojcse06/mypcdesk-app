@@ -1,23 +1,26 @@
-# PyInstaller recipe for MyDesk (Windows).  Build:  pyinstaller packaging/mydesk.spec --noconfirm
-# Produces dist/MyDesk/ with two programs that share one bundled Python:
-#   MyDesk.exe       the app (no console window)
-#   MyDesk-tool.exe  runs tool scripts for MyDesk (console program, started hidden) so their progress can be read
+# PyInstaller recipe for MyDesk — Windows, macOS and Linux.
+#   pyinstaller packaging/mydesk.spec --noconfirm
+# Produces dist/MyDesk/ with two programs sharing one bundled Python:
+#   MyDesk       the app (no console window)
+#   MyDesk-tool  the same program as a console app: runs tool scripts and the `mydesk` command line
+# On macOS it also wraps the app as dist/MyDesk.app.
 import os
+import sys
 
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))  # noqa: F821 (SPECPATH is set by PyInstaller)
+PKG = os.path.join(ROOT, "mydesk")
 
 datas = [
-    (os.path.join(ROOT, "ui"), "ui"),
-    (os.path.join(ROOT, "tools"), "tools"),
-    (os.path.join(ROOT, "sections.json"), "."),
-    (os.path.join(ROOT, "VERSION"), "."),
-    (os.path.join(ROOT, "config.example.json"), "."),
-    (os.path.join(ROOT, "pc_status.py"), "."),
-    (os.path.join(ROOT, "remote"), "remote"),
+    (os.path.join(PKG, "ui"), "mydesk/ui"),
+    (os.path.join(PKG, "tools"), "mydesk/tools"),
+    (os.path.join(PKG, "sections.json"), "mydesk"),
+    (os.path.join(PKG, "VERSION"), "mydesk"),
+    (os.path.join(PKG, "config.example.json"), "mydesk"),
 ]
-binaries, hiddenimports = [], ["core", "core.server", "core.whatsapp", "core.keepawake"]
+binaries = []
+hiddenimports = collect_submodules("mydesk")
 
 # Packages the tool scripts import at run time (PyInstaller can't see those imports on its own).
 for pkg in ["webview", "pystray", "psutil", "markdown", "PIL", "yt_dlp", "imageio_ffmpeg",
@@ -25,7 +28,7 @@ for pkg in ["webview", "pystray", "psutil", "markdown", "PIL", "yt_dlp", "imagei
     try:
         d, b, h = collect_all(pkg)
     except Exception:
-        continue  # optional on this platform
+        continue  # not used on this platform
     datas += d
     binaries += b
     hiddenimports += h
@@ -40,7 +43,12 @@ a = Analysis(  # noqa: F821
 )
 pyz = PYZ(a.pure)  # noqa: F821
 
-icon = os.path.join(ROOT, "ui", "mydesk.ico")
+icon = os.path.join(PKG, "ui", "mydesk.ico") if sys.platform == "win32" else None
 app = EXE(pyz, a.scripts, [], exclude_binaries=True, name="MyDesk", console=False, icon=icon)  # noqa: F821
 tool = EXE(pyz, a.scripts, [], exclude_binaries=True, name="MyDesk-tool", console=True, icon=icon)  # noqa: F821
-COLLECT(app, tool, a.binaries, a.datas, name="MyDesk")  # noqa: F821
+coll = COLLECT(app, tool, a.binaries, a.datas, name="MyDesk")  # noqa: F821
+
+if sys.platform == "darwin":
+    BUNDLE(coll, name="MyDesk.app", bundle_identifier="com.mydesk.app",  # noqa: F821
+           info_plist={"CFBundleShortVersionString": open(os.path.join(PKG, "VERSION")).read().strip(),
+                       "NSHighResolutionCapable": True})

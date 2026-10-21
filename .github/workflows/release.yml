@@ -1,7 +1,11 @@
 name: Release
 
-# Push a tag like v1.0.0-beta.1 and this builds the Windows installer + portable zip
-# and attaches them to a GitHub Release (marked pre-release when the tag has a "-").
+# Push a tag like v1.0.0-beta.2 and this builds, for every system:
+#   Windows  MyDesk-Setup-<v>.exe (installer) + MyDesk-<v>-windows.zip (portable)
+#   macOS    MyDesk-<v>-macos.zip (MyDesk.app)
+#   Linux    MyDesk-<v>-linux.tar.gz
+#   Python   mydesk-<v>-py3-none-any.whl + sdist  (pipx install …)
+# and attaches them to a GitHub Release (pre-release when the tag has a "-").
 on:
   push:
     tags: ["v*"]
@@ -11,13 +15,29 @@ permissions:
   contents: write
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  package:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+        with: { python-version: "3.12" }
+      - run: pip install build && python -m build
+      - uses: actions/upload-artifact@v4
+        with: { name: python-package, path: dist/* }
+
+  executables:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, label: windows }
+          - { os: macos-latest, label: macos }
+          - { os: ubuntu-latest, label: linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
       - name: Install packages
         run: |
           python -m pip install --upgrade pip
@@ -25,33 +45,58 @@ jobs:
       - name: Smoke tests
         run: python -m unittest discover tests -v
       - name: Read version
-        shell: pwsh
-        run: |
-          $v = (Get-Content VERSION -Raw).Trim()
-          "MYDESK_VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: bash
+        run: echo "MYDESK_VERSION=$(tr -d '[:space:]' < mydesk/VERSION)" >> "$GITHUB_ENV"
       - name: Bundle with PyInstaller
         run: pyinstaller packaging/mydesk.spec --noconfirm
-      - name: Check the bundle starts and can run a tool
-        shell: pwsh
+      - name: Check the bundle runs its CLI and a tool
+        shell: bash
         run: |
-          & dist\MyDesk\MyDesk-tool.exe --version
-          & dist\MyDesk\MyDesk-tool.exe --run-script dist\MyDesk\_internal\tools\mycheats\mycheats.py
-      - name: Build installer (Inno Setup)
+          dist/MyDesk/MyDesk-tool version
+          dist/MyDesk/MyDesk-tool tools
+          dist/MyDesk/MyDesk-tool cheats
+
+      - name: Windows installer + portable zip
+        if: matrix.label == 'windows'
         shell: pwsh
         run: |
           if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) { choco install innosetup -y --no-progress }
           $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
           if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
           & $iscc packaging\installer.iss
-      - name: Portable zip
-        shell: pwsh
-        run: Compress-Archive -Path dist\MyDesk\* -DestinationPath "dist\MyDesk-$env:MYDESK_VERSION-portable.zip"
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
+          Compress-Archive -Path dist\MyDesk\* -DestinationPath "dist\MyDesk-$env:MYDESK_VERSION-windows.zip"
+      - name: macOS app zip
+        if: matrix.label == 'macos'
+        run: ditto -c -k --keepParent dist/MyDesk.app "dist/MyDesk-${MYDESK_VERSION}-macos.zip"
+      - name: Linux tarball
+        if: matrix.label == 'linux'
+        run: |
+          cp packaging/linux-install.sh dist/MyDesk/install.sh
+          tar -C dist -czf "dist/MyDesk-${MYDESK_VERSION}-linux.tar.gz" MyDesk
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: MyDesk ${{ env.MYDESK_VERSION }}
+          name: ${{ matrix.label }}
+          path: |
+            dist/MyDesk-Setup-*.exe
+            dist/MyDesk-*-windows.zip
+            dist/MyDesk-*-macos.zip
+            dist/MyDesk-*-linux.tar.gz
+          if-no-files-found: ignore
+
+  release:
+    needs: [package, executables]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - name: Checksums
+        run: cd out && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: MyDesk ${{ github.ref_name }}
           prerelease: ${{ contains(github.ref_name, '-') }}
           body_path: CHANGELOG.md
-          files: |
-            dist/MyDesk-Setup-*.exe
-            dist/MyDesk-*-portable.zip
+          files: out/*

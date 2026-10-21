@@ -54,34 +54,46 @@ Rename sections, change colours or list planned tools in [`sections.json`](secti
 
 ## Install
 
-**Current version: 1.0.0-beta.1** — see [CHANGELOG.md](CHANGELOG.md).
+**Current version: 1.0.0-beta.2** — see [CHANGELOG.md](CHANGELOG.md). Pick whichever suits you; all three give the same app.
 
-**Easiest (Windows):** download `MyDesk-Setup-<version>.exe` from the repo's **Releases** page and run it. No Python needed; it can start MyDesk at sign-in, and your settings stay in `%APPDATA%\MyDesk`. The beta isn't code-signed, so Windows may show "unknown publisher": choose **More info → Run anyway**. Prefer no installer? Use the `-portable.zip` from the same page.
+### 1. Download an app (no Python needed)
 
-Releases are built automatically by `.github/workflows/release.yml` when a tag like `v1.0.0-beta.1` is pushed (PyInstaller + Inno Setup on a Windows runner).
+From the repo's **Releases** page:
 
-**From source** — you need **Python 3.10–3.13** (Anaconda's Python works too).
+| System | Download | Then |
+| --- | --- | --- |
+| Windows | `MyDesk-Setup-<version>.exe` | Run it; tick "Start MyDesk when I sign in". Unsigned beta: **More info → Run anyway** |
+| Windows (portable) | `MyDesk-<version>-windows.zip` | Unzip anywhere, run `MyDesk.exe` |
+| macOS | `MyDesk-<version>-macos.zip` | Unzip, move **MyDesk.app** to Applications. First open: right-click → **Open** (unsigned beta) |
+| Linux | `MyDesk-<version>-linux.tar.gz` | `tar xzf …` then `./MyDesk/install.sh` (adds a menu entry, a `mydesk` command and login start) |
 
-**Windows:** download or clone this repo, then double-click **`install.bat`**. To install without starting at sign-in, run `install.bat -NoStartup`.
-
-**macOS / Linux:**
+### 2. Install the `mydesk` command (Python 3.10–3.13)
 
 ```bash
-git clone https://github.com/<you>/MyDesk.git
-cd MyDesk && ./install.sh          # add --no-startup to skip login start
+pipx install "mydesk[clip] @ https://github.com/rmanojcse06/MyDesk/releases/download/v1.0.0-beta.2/mydesk-1.0.0b2-py3-none-any.whl"
+mydesk autostart on        # start at sign-in (Windows, macOS and Linux)
+mydesk                     # open MyDesk
 ```
 
-The installer creates a private environment in `.venv`, installs the packages, adds shortcuts, registers MyDesk to open when you log in, and starts it.
+Leave out `[clip]` to skip Clip Maker's video and OCR packages (about 300 MB). While the repo is private, download the `.whl` from Releases and run `pipx install "mydesk[clip] @ ./mydesk-….whl"`. On Linux add `[qt]` for a built-in window; otherwise MyDesk opens in a Chrome/Edge app window.
 
-| | Windows | macOS / Linux |
+### 3. From source (for developing MyDesk)
+
+**Windows:** clone the repo and double-click **`install.bat`** (`install.bat -NoStartup` to skip sign-in start). **macOS / Linux:** `./install.sh` (`--no-startup` to skip). Both create `.venv`, install packages, add shortcuts and open MyDesk; `python mydesk.py <command>` works like `mydesk <command>`.
+
+### Where your things live
+
+| | Downloaded app or `pipx` | Source checkout |
 | --- | --- | --- |
-| Open MyDesk | Desktop / Start menu shortcut, or `MyDesk.bat` | `./mydesk.sh` |
-| Run a tool | `run_tool clip_saver "<url>"` | `./run_tool.sh clip_saver "<url>"` |
-| Stop starting at login | `remove_startup.bat` | delete `~/.config/autostart/mydesk.desktop` or `~/Library/LaunchAgents/com.mydesk.app.plist` |
+| Settings `config.json` | Windows `%APPDATA%\MyDesk` · macOS `~/Library/Application Support/MyDesk` · Linux `~/.local/share/mydesk` | the repo folder |
+| Data (clips, events, status) | `data/` in that same folder | `data/` in the repo |
+| Your own tools | `tools/` in that same folder | `mydesk/tools/` |
+
+Updating or uninstalling never touches these. `mydesk paths` prints them, `mydesk backup` zips settings and data, and `MYDESK_HOME` moves everything.
 
 ### Settings
 
-Copy `config.example.json` to `config.json` to set your name (otherwise your OS username is used), the time-zone label and the window size. `config.json` and everything in `data/` are git-ignored, so your settings and saved clips never get committed.
+Copy `config.example.json` to `config.json` in your settings folder to set your name (otherwise your OS username is used), the window, stay-awake mode and the optional WhatsApp bridge.
 
 ### Chat with Claude (optional)
 
@@ -95,30 +107,38 @@ setx ANTHROPIC_API_KEY "sk-ant-..."      # Windows
 export ANTHROPIC_API_KEY="sk-ant-..."    # macOS / Linux, e.g. in ~/.zshrc
 ```
 
-## Run tools without the app
+## The `mydesk` command
 
-```bat
-run_tool list
-run_tool clip_saver "https://www.youtube.com/shorts/XXXX"
-run_tool clip_saver "https://www.instagram.com/reel/XXXX/" --cookies-from-browser firefox
-run_tool clip_saver "<url>" --no-video --shots 5
 ```
+mydesk                          open MyDesk (brings the running copy forward)
+mydesk tools                    list tools
+mydesk run clip_saver <link>    run a tool in the terminal (add --help for its options)
+mydesk cheats [git]             open a cheatsheet; mydesk run mycheats --new docker for your own
+mydesk status                   is this computer on? (MyDesk's heartbeat)
+mydesk ask status|notify|…      talk to the running MyDesk through its mailbox
+mydesk awake --for 120          don't sleep for 2 hours (only on the charger)
+mydesk autostart on|off         start at sign-in
+mydesk backup | paths | version
+```
+
+The downloaded apps include it too: `MyDesk-tool` on Windows/macOS, `mydesk` after the Linux `install.sh`.
 
 ## Add your own tool
 
-Copy `tools/_template` to `tools/<your_tool>`, edit `tool.json` (name, section, form inputs) and write the script. Restart MyDesk and the tool appears in its section's menu. The full guide is in [CONTRIBUTING.md](CONTRIBUTING.md).
+Copy `mydesk/tools/_template` into your own-tools folder (see the table above) as `<your_tool>/`, edit `tool.json` (name, section, form inputs) and write the script. Restart MyDesk and the tool appears in its section's menu. The full guide is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## How it works
 
 ```
-mydesk.py          starts the local server and opens the window (pywebview → Edge WebView2 / WebKit / Qt;
-                   falls back to a Chrome/Edge app window)
-mytool.py          command-line runner for any tool
-core/              config, tool discovery, job runner, system health, HTTP server
-ui/                the interface (plain HTML, CSS, JavaScript; no build step)
-tools/<id>/        one folder per tool: tool.json + script
-sections.json      the sections and their colours
-data/<tool>/       everything tools save (git-ignored)
+mydesk/app.py        starts the local server and opens the window (pywebview → Edge WebView2 / WebKit / Qt;
+                     falls back to a Chrome/Edge app window)
+mydesk/cli.py        the `mydesk` command
+mydesk/core/         config, tool discovery, job runner, health, devices, events, mailbox, stay-awake,
+                     WhatsApp bridge, HTTP server
+mydesk/ui/           the interface (plain HTML, CSS, JavaScript; no build step)
+mydesk/tools/<id>/   one folder per tool: tool.json + script
+packaging/           PyInstaller recipe, Windows installer, Linux installer
+relay/               optional WhatsApp relay (Cloudflare Worker)
 ```
 
 Run the checks with `python -m unittest discover tests`. GitHub Actions runs them on Windows, macOS and Linux for every push.

@@ -7,15 +7,31 @@ import os
 import sys
 from pathlib import Path
 
-# Source checkout: everything lives next to the code.
-# Packaged app (PyInstaller): code is read-only in the install folder, while your
-# settings, data and own tools live in %APPDATA%\MyDesk so updates never touch them.
+# Where things live:
+#   code (ROOT)      the mydesk package: ui/, tools/, sections.json — read-only once installed
+#   APP_HOME         your settings, data and own tools:
+#     source checkout (git clone + install.bat)  -> the repo folder, as before
+#     pip/pipx package or standalone executable  -> the usual per-user folder for your system:
+#       Windows %APPDATA%\MyDesk · macOS ~/Library/Application Support/MyDesk · Linux ~/.local/share/mydesk
+#   MYDESK_HOME overrides APP_HOME; MYDESK_DATA overrides only the data folder.
 FROZEN = bool(getattr(sys, "frozen", False))
-ROOT = Path(__file__).resolve().parent.parent
-APP_HOME = (Path(os.environ.get("APPDATA") or Path.home()) / "MyDesk") if FROZEN else ROOT
+ROOT = Path(__file__).resolve().parent.parent          # .../mydesk
+REPO = ROOT.parent
+SOURCE_TREE = not FROZEN and (REPO / "pyproject.toml").exists() and (REPO / "install.bat").exists()
+
+
+def _user_home() -> Path:
+    if os.name == "nt":
+        return Path(os.environ.get("APPDATA") or Path.home() / "AppData" / "Roaming") / "MyDesk"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / "MyDesk"
+    return Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share") / "mydesk"
+
+
+APP_HOME = Path(os.environ["MYDESK_HOME"]) if os.environ.get("MYDESK_HOME") else (REPO if SOURCE_TREE else _user_home())
 UI_DIR = ROOT / "ui"
 TOOLS_DIR = ROOT / "tools"
-USER_TOOLS_DIR = APP_HOME / "tools" if FROZEN else ROOT / "tools"
+USER_TOOLS_DIR = APP_HOME / "tools"
 DATA_DIR = Path(os.environ.get("MYDESK_DATA") or APP_HOME / "data")
 CONFIG_FILE = APP_HOME / "config.json"  # your settings; not committed (see config.example.json)
 SECTIONS_FILE = ROOT / "sections.json"

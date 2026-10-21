@@ -1,0 +1,23 @@
+{
+  "name": "Your Name",
+  "timezone_label": "",
+  "start_minimized": false,
+  "close_button": "minimize",
+  "tray_quit": false,
+  "window": {
+    "width": 1320,
+    "height": 860
+  },
+  "claude_model": "claude-sonnet-5-5",
+  "heartbeat_url": "",
+  "keep_awake": "claude-running",
+  "whatsapp": {
+    "enabled": false,
+    "relay_url": "https://mydesk-relay.<your-subdomain>.workers.dev",
+    "relay_key": "",
+    "phone_number_id": "",
+    "access_token": "",
+    "graph_version": "v23.0",
+    "poll_seconds": 5
+  }
+}

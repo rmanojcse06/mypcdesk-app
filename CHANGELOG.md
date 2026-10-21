@@ -1,3 +1,26 @@
+# MyDesk 1.0.0-beta.2
+
+Install MyDesk on **Windows, macOS and Linux**, as a downloaded app or as a `mydesk` command.
+
+## New
+
+- **Downloads for every system** (built automatically for each release):
+  - Windows installer and portable zip
+  - macOS `MyDesk.app`
+  - Linux tarball with an `install.sh` that adds a menu entry, a `mydesk` command and login start
+  - all with no Python needed
+- **`pipx install mydesk`**: a Python package with the `mydesk` command. Clip Maker's heavy packages are an optional extra: `mydesk[clip]`.
+- **`mydesk` command:** `open`, `tools`, `run <tool>`, `cheats`, `status`, `ask`, `awake`, `autostart on|off`, `backup`, `paths`, `version`.
+- **Per-user folders:** installed copies keep settings and data in the usual place for each system, so updates never touch them. Source checkouts keep using the repo folder, so nothing moves on an existing install.
+- **`mydesk backup`:** zips settings and data (skipping videos) and keeps the last 5. This is the first step of safe upgrade and downgrade.
+- **Start at sign-in on every system:** Windows (Run key), macOS (LaunchAgent), Linux (autostart).
+
+## Changed
+
+- Code moved into a `mydesk/` package. `install.bat`, `install.sh`, `MyDesk.bat`, `run_tool`, `pc_status.py`, `keep_awake.py` and `remote/ask_mydesk.py` all still work.
+
+---
+
 # MyDesk 1.0.0-beta.1
 
 First beta: everything below works today. The three-panel lobby is designed and prototyped and comes in a later beta.

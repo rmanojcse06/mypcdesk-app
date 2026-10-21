@@ -5,10 +5,10 @@ Every MyDesk tool is a plain Python script plus a small `tool.json`. MyDesk read
 ## 1. Copy the template
 
 ```
-tools/_template  ->  tools/<your_tool_id>
+mydesk/tools/_template  ->  <your own-tools folder>/<your_tool_id>   (or mydesk/tools/<id> in a source checkout)
 ```
 
-Use lowercase and underscores for the folder name, e.g. `tools/resume_builder`. Folders starting with `_` are ignored.
+Use lowercase and underscores for the folder name, e.g. `resume_builder`. Folders starting with `_` are ignored.
 
 ## 2. Fill in `tool.json`
 
@@ -53,8 +53,8 @@ print('@@{"event": "error", "msg": "Profile is private"}', flush=True)  # then e
 ## 4. Try it
 
 ```
-run_tool list
-run_tool resume_builder "https://linkedin.com/in/..."
+mydesk tools
+mydesk run resume_builder "https://linkedin.com/in/..."
 ```
 
 Restart MyDesk and the tool appears in its section's hover menu. Run `python -m unittest discover tests` before opening a pull request — it checks every tool's `tool.json` points at a real section and script.

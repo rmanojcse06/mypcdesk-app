@@ -36,7 +36,7 @@ def script_command(script_path: str) -> list[str]:
     """How to run a tool script: with Python from source, or through MyDesk.exe when packaged."""
     if FROZEN:
         # MyDesk-tool.exe is the console twin of MyDesk.exe, so the tool's progress output can be read
-        twin = os.path.join(os.path.dirname(sys.executable), "MyDesk-tool.exe")
+        twin = os.path.join(os.path.dirname(sys.executable), "MyDesk-tool" + (".exe" if os.name == "nt" else ""))
         return [twin if os.path.exists(twin) else sys.executable, "--run-script", script_path]
     return [_python_for_tools(), script_path]
 

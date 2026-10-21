@@ -12,8 +12,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from core import registry, server  # noqa: E402
-from core.config import load_sections  # noqa: E402
+from mydesk.core import registry, server  # noqa: E402
+from mydesk.core.config import load_sections  # noqa: E402
 
 
 class SmokeTest(unittest.TestCase):
@@ -76,16 +76,15 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(ctx.exception.code, 404)
 
     def test_mailbox_and_heartbeat(self):
-        sys.path.insert(0, str(ROOT / "remote"))
-        import ask_mydesk
-        import pc_status
-        from core import heartbeat
-        r = ask_mydesk.ask(ROOT, {"action": "ping"}, timeout=15)
+        from mydesk import remote as ask_mydesk
+        from mydesk import status as pc_status
+        from mydesk.core import heartbeat
+        r = ask_mydesk.ask(None, {"action": "ping"}, timeout=15)
         self.assertTrue(r["ok"], r)
-        r = ask_mydesk.ask(ROOT, {"action": "rm -rf /"}, timeout=15)
+        r = ask_mydesk.ask(None, {"action": "rm -rf /"}, timeout=15)
         self.assertFalse(r["ok"])
         self.assertIn("not allowed", r["error"])
-        r = ask_mydesk.ask(ROOT, {"action": "run_tool", "tool": "nope"}, timeout=15)
+        r = ask_mydesk.ask(None, {"action": "run_tool", "tool": "nope"}, timeout=15)
         self.assertFalse(r["ok"])
         heartbeat.write_status()
         status = json.loads(heartbeat.STATUS_FILE.read_text())
@@ -95,7 +94,7 @@ class SmokeTest(unittest.TestCase):
         self.assertEqual(pc_status.verdict(None)[0], 2)
 
     def test_keep_awake_rules(self):
-        from core.keepawake import decide
+        from mydesk.core.keepawake import decide
         now = 1_000_000
         self.assertFalse(decide("claude-running", False, True, True, now, now)[0])          # battery: never
         self.assertTrue(decide("claude-running", True, True, False, 0, now)[0])            # charger + Claude open
@@ -108,7 +107,7 @@ class SmokeTest(unittest.TestCase):
         self.assertFalse(decide("off", False, False, False, 0, now, hold_until=now + 60)[0])  # timer, but battery
 
     def test_whatsapp_commands(self):
-        from core.whatsapp import parse, reply_text
+        from mydesk.core.whatsapp import parse, reply_text
         self.assertEqual(parse("Status")["action"], "status")
         self.assertEqual(parse("awake 2h"), {"action": "keep_awake", "minutes": 120.0})
         self.assertEqual(parse("awake 90m"), {"action": "keep_awake", "minutes": 90.0})

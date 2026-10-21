@@ -51,7 +51,7 @@ if ($LASTEXITCODE -ne 0) { Write-Host "Package install failed - see messages abo
 # 3. Shortcuts
 Write-Host "[3/4] Creating shortcuts" -ForegroundColor Cyan
 $shell = New-Object -ComObject WScript.Shell
-$icon = Join-Path $Root "ui\mydesk.ico"
+$icon = Join-Path $Root "mydesk\ui\mydesk.ico"
 function New-Shortcut($path, $arguments) {
     $s = $shell.CreateShortcut($path)
     $s.TargetPath = $vpyw
